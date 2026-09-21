@@ -17,6 +17,13 @@ provides:
       ordId: customer.build:apiResource:mass-balance-reconciliation-a37df.mass-balance-orchestrator-agent:v1
 
 requires:
+  # SAP BTP Destination Service — provides OGS_S4 → OGS_650 connectivity
+  - name: destination
+    kind: platform-service
+    service: destination
+    plan: lite
+
+  # MCP Servers — SAP OData APIs via OGS_S4 destination
   - name: sap-s4-material-stock-mcp-server
     kind: mcp-server
     ordId: customer.build:apiResource:mass-balance-reconciliation-a37df.sap-s4-material-stock-mcp-server:v1
