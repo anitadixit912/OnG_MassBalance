@@ -6,17 +6,8 @@ metadata:
   name: mass-balance-orchestrator-agent
   version: 1.0.0
 
-agentCard:
-  name: Mass Balance Orchestrator Agent
-  version: 1.0.0
-  description: Refinery mass balance reconciliation. Collects SAP data, validates, calculates, classifies exceptions and generates reports with human approval gates.
-
 container:
   port: 5000
-
-models:
-  - executableId: aws-bedrock
-    name: anthropic--claude-4.5-sonnet
 
 provides:
   apis:
@@ -40,18 +31,3 @@ requires:
   - name: sap-s4-proc-order-confirmation-mcp-server
     kind: mcp-server
     ordId: customer.build:apiResource:mass-balance-reconciliation-a37df.sap-s4-proc-order-confirmation-mcp-server:v1
-
-probes:
-  startup:
-    path: /health
-    initialDelaySeconds: 0
-    periodSeconds: 5
-    failureThreshold: 12
-  liveness:
-    path: /health
-    initialDelaySeconds: 15
-    periodSeconds: 10
-  readiness:
-    path: /health
-    initialDelaySeconds: 5
-    periodSeconds: 5
