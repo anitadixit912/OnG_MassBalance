@@ -1,0 +1,57 @@
+apiVersion: asset.sap/v1
+kind: Asset
+type: agent
+
+metadata:
+  name: data-collection-agent
+  version: 1.0.0
+
+agentCard:
+  name: Data Collection Agent
+  version: 1.0.0
+  description: Pulls live hydrocarbon data from SAP IS-Oil & Gas OGS_650 via OGS_S4 BTP destination. Covers TANK, MAT, MOV, PHYS, BOOK data domains.
+
+container:
+  port: 5000
+
+models:
+  - executableId: aws-bedrock
+    name: anthropic--claude-4.5-sonnet
+
+provides:
+  apis:
+    - name: data-collection-agent
+      kind: a2a
+      ordId: customer.build:apiResource:mass-balance-reconciliation-a37df.data-collection-agent:v1
+
+requires:
+  - name: sap-s4-material-stock-mcp-server
+    kind: mcp-server
+    ordId: customer.build:apiResource:mass-balance-reconciliation-a37df.sap-s4-material-stock-mcp-server:v1
+  - name: sap-s4-material-document-mcp-server
+    kind: mcp-server
+    ordId: customer.build:apiResource:mass-balance-reconciliation-a37df.sap-s4-material-document-mcp-server:v1
+  - name: sap-s4-physical-inventory-mcp-server
+    kind: mcp-server
+    ordId: customer.build:apiResource:mass-balance-reconciliation-a37df.sap-s4-physical-inventory-mcp-server:v1
+  - name: sap-s4-stock-transport-order-mcp-server
+    kind: mcp-server
+    ordId: customer.build:apiResource:mass-balance-reconciliation-a37df.sap-s4-stock-transport-order-mcp-server:v1
+  - name: sap-s4-proc-order-confirmation-mcp-server
+    kind: mcp-server
+    ordId: customer.build:apiResource:mass-balance-reconciliation-a37df.sap-s4-proc-order-confirmation-mcp-server:v1
+
+probes:
+  startup:
+    path: /health
+    initialDelaySeconds: 0
+    periodSeconds: 5
+    failureThreshold: 12
+  liveness:
+    path: /health
+    initialDelaySeconds: 15
+    periodSeconds: 10
+  readiness:
+    path: /health
+    initialDelaySeconds: 5
+    periodSeconds: 5

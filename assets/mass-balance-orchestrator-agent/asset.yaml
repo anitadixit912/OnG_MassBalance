@@ -1,0 +1,58 @@
+apiVersion: asset.sap/v1
+kind: Asset
+type: agent
+
+metadata:
+  name: mass-balance-orchestrator-agent
+  version: 1.0.0
+
+agentCard:
+  name: Mass Balance Orchestrator Agent
+  version: 1.0.0
+  description: Orchestrates the full refinery mass balance reconciliation pipeline. Coordinates 5 sub-agents, handles goal decomposition, dynamic replanning on failure, human approval gates, and audit logging.
+
+container:
+  port: 5000
+
+models:
+  - executableId: aws-bedrock
+    name: anthropic--claude-4.5-sonnet
+
+provides:
+  apis:
+    - name: mass-balance-orchestrator-agent
+      kind: a2a
+      ordId: customer.build:apiResource:mass-balance-reconciliation-a37df.mass-balance-orchestrator-agent:v1
+
+requires:
+  # Sub-agents (A2A)
+  - name: data-collection-agent
+    kind: agent
+    ordId: customer.build:agent:mass-balance-reconciliation-a37df.data-collection-agent:v1
+  - name: validation-anomaly-agent
+    kind: agent
+    ordId: customer.build:agent:mass-balance-reconciliation-a37df.validation-anomaly-agent:v1
+  - name: calculation-reconciliation-agent
+    kind: agent
+    ordId: customer.build:agent:mass-balance-reconciliation-a37df.calculation-reconciliation-agent:v1
+  - name: exception-management-agent
+    kind: agent
+    ordId: customer.build:agent:mass-balance-reconciliation-a37df.exception-management-agent:v1
+  - name: report-generation-agent
+    kind: agent
+    ordId: customer.build:agent:mass-balance-reconciliation-a37df.report-generation-agent:v1
+
+probes:
+  startup:
+    path: /health
+    initialDelaySeconds: 0
+    periodSeconds: 5
+    failureThreshold: 12
+  liveness:
+    path: /health
+    initialDelaySeconds: 15
+    periodSeconds: 10
+  readiness:
+    path: /health
+    initialDelaySeconds: 5
+    periodSeconds: 5

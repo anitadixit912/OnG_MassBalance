@@ -1,0 +1,25 @@
+apiVersion: solution.sap/v1
+kind: Solution
+
+metadata:
+  name: mass-balance-reconciliation-a37df
+  version: 1.0.0
+  description: Refinery Mass Balance Reconciliation — 1 Orchestrator + 5 Sub-agents via SAP IS-Oil & Gas OGS_S4 destination
+
+assets:
+  # MCP Server Assets — SAP OData APIs via OGS_S4 destination
+  - ref: ./assets/sap-s4-material-stock-mcp-server/asset.yaml
+  - ref: ./assets/sap-s4-material-document-mcp-server/asset.yaml
+  - ref: ./assets/sap-s4-physical-inventory-mcp-server/asset.yaml
+  - ref: ./assets/sap-s4-stock-transport-order-mcp-server/asset.yaml
+  - ref: ./assets/sap-s4-proc-order-confirmation-mcp-server/asset.yaml
+
+  # Sub-agents
+  - ref: ./assets/data-collection-agent/asset.yaml
+  - ref: ./assets/validation-anomaly-agent/asset.yaml
+  - ref: ./assets/calculation-reconciliation-agent/asset.yaml
+  - ref: ./assets/exception-management-agent/asset.yaml
+  - ref: ./assets/report-generation-agent/asset.yaml
+
+  # Orchestrator
+  - ref: ./assets/mass-balance-orchestrator-agent/asset.yaml

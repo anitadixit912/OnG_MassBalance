@@ -1,0 +1,48 @@
+apiVersion: asset.sap/v1
+kind: Asset
+type: agent
+
+metadata:
+  name: validation-anomaly-agent
+  version: 1.0.0
+
+agentCard:
+  name: Validation & Anomaly Agent
+  version: 1.0.0
+  description: Validates completeness, consistency, and referential integrity of hydrocarbon data. Detects sensor faults, missing readings, and statistical outliers. Blocks pipeline on failure.
+
+container:
+  port: 5000
+
+models:
+  - executableId: aws-bedrock
+    name: anthropic--claude-4.5-sonnet
+
+provides:
+  apis:
+    - name: validation-anomaly-agent
+      kind: a2a
+      ordId: customer.build:apiResource:mass-balance-reconciliation-a37df.validation-anomaly-agent:v1
+
+requires:
+  - name: sap-s4-material-stock-mcp-server
+    kind: mcp-server
+    ordId: customer.build:apiResource:mass-balance-reconciliation-a37df.sap-s4-material-stock-mcp-server:v1
+  - name: sap-s4-material-document-mcp-server
+    kind: mcp-server
+    ordId: customer.build:apiResource:mass-balance-reconciliation-a37df.sap-s4-material-document-mcp-server:v1
+
+probes:
+  startup:
+    path: /health
+    initialDelaySeconds: 0
+    periodSeconds: 5
+    failureThreshold: 12
+  liveness:
+    path: /health
+    initialDelaySeconds: 15
+    periodSeconds: 10
+  readiness:
+    path: /health
+    initialDelaySeconds: 5
+    periodSeconds: 5

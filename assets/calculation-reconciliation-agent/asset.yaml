@@ -1,0 +1,51 @@
+apiVersion: asset.sap/v1
+kind: Asset
+type: agent
+
+metadata:
+  name: calculation-reconciliation-agent
+  version: 1.0.0
+
+agentCard:
+  name: Calculation & Reconciliation Agent
+  version: 1.0.0
+  description: Applies the mass balance formula (Closing = Opening + Receipts - Issues - Consumption +/- Transfers +/- Adjustments) at Plant, Tank, and Material level with temperature, density, and meter factor corrections.
+
+container:
+  port: 5000
+
+models:
+  - executableId: aws-bedrock
+    name: anthropic--claude-4.5-sonnet
+
+provides:
+  apis:
+    - name: calculation-reconciliation-agent
+      kind: a2a
+      ordId: customer.build:apiResource:mass-balance-reconciliation-a37df.calculation-reconciliation-agent:v1
+
+requires:
+  - name: sap-s4-material-stock-mcp-server
+    kind: mcp-server
+    ordId: customer.build:apiResource:mass-balance-reconciliation-a37df.sap-s4-material-stock-mcp-server:v1
+  - name: sap-s4-physical-inventory-mcp-server
+    kind: mcp-server
+    ordId: customer.build:apiResource:mass-balance-reconciliation-a37df.sap-s4-physical-inventory-mcp-server:v1
+  - name: sap-s4-proc-order-confirmation-mcp-server
+    kind: mcp-server
+    ordId: customer.build:apiResource:mass-balance-reconciliation-a37df.sap-s4-proc-order-confirmation-mcp-server:v1
+
+probes:
+  startup:
+    path: /health
+    initialDelaySeconds: 0
+    periodSeconds: 5
+    failureThreshold: 12
+  liveness:
+    path: /health
+    initialDelaySeconds: 15
+    periodSeconds: 10
+  readiness:
+    path: /health
+    initialDelaySeconds: 5
+    periodSeconds: 5

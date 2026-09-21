@@ -1,0 +1,58 @@
+apiVersion: asset.sap/v1
+kind: Asset
+type: agent
+
+metadata:
+  name: mass-balance-reconciliation-agent
+  version: 1.0.0
+
+agentCard:
+  name: Mass Balance Reconciliation Agent
+  version: 1.0.0
+  description: AI agent for refinery mass balance reconciliation using live SAP S/4HANA data via OGS_S4 destination. Covers TANK, MAT, MOV, PHYS, BOOK domains with human approval gates.
+
+container:
+  buildPath: .
+  port: 5000
+
+models:
+  - executableId: aws-bedrock
+    name: anthropic--claude-4.5-sonnet
+
+provides:
+  apis:
+    - name: mass-balance-reconciliation-agent
+      kind: a2a
+      ordId: customer.build:apiResource:mass-balance-reconciliation-a37df.mass-balance-reconciliation-agent:v1
+
+requires:
+  - name: sap-s4-material-stock-mcp-server
+    kind: mcp-server
+    ordId: customer.build:apiResource:mass-balance-reconciliation-a37df.sap-s4-material-stock-mcp-server:v1
+  - name: sap-s4-material-document-mcp-server
+    kind: mcp-server
+    ordId: customer.build:apiResource:mass-balance-reconciliation-a37df.sap-s4-material-document-mcp-server:v1
+  - name: sap-s4-proc-order-confirmation-mcp-server
+    kind: mcp-server
+    ordId: customer.build:apiResource:mass-balance-reconciliation-a37df.sap-s4-proc-order-confirmation-mcp-server:v1
+  - name: sap-s4-physical-inventory-mcp-server
+    kind: mcp-server
+    ordId: customer.build:apiResource:mass-balance-reconciliation-a37df.sap-s4-physical-inventory-mcp-server:v1
+  - name: sap-s4-stock-transport-order-mcp-server
+    kind: mcp-server
+    ordId: customer.build:apiResource:mass-balance-reconciliation-a37df.sap-s4-stock-transport-order-mcp-server:v1
+
+probes:
+  startup:
+    path: /health
+    initialDelaySeconds: 0
+    periodSeconds: 5
+    failureThreshold: 12
+  liveness:
+    path: /health
+    initialDelaySeconds: 15
+    periodSeconds: 10
+  readiness:
+    path: /health
+    initialDelaySeconds: 5
+    periodSeconds: 5

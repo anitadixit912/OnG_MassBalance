@@ -1,0 +1,20 @@
+apiVersion: asset.sap/v1
+kind: Asset
+type: mcp-server
+
+metadata:
+  name: sap-s4-material-document-mcp-server
+  version: 1.0.0
+  translation: mcp-translation/translation.json
+  apiSpec: mcp-translation/api-spec.edmx
+
+provides:
+  apis:
+    - name: sap-s4-material-document-mcp-server
+      kind: mcp-server
+      ordId: customer.build:apiResource:mass-balance-reconciliation-a37df.sap-s4-material-document-mcp-server:v1
+
+requires:
+  - name: API_MATERIAL_DOCUMENT_SRV
+    kind: api
+    ordId: sap.s4:apiResource:API_MATERIAL_DOCUMENT_SRV:v1
