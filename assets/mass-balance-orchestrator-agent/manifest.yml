@@ -1,0 +1,12 @@
+applications:
+  - name: mass-balance-orchestrator-agent
+    memory: 512M
+    disk_quota: 1G
+    buildpacks:
+      - python_buildpack
+    command: python app/main.py
+    no-route: true
+    health-check-type: process
+    env:
+      PYTHONPATH: .
+      PORT: "5000"

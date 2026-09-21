@@ -8,8 +8,23 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.tools import BaseTool
 from langchain_litellm import ChatLiteLLM
 from litellm.exceptions import APIConnectionError, InternalServerError, RateLimitError, ServiceUnavailableError, Timeout
-from sap_cloud_sdk.agent_decorators import agent_config, agent_model, prompt_section
-from sap_cloud_sdk.agent_memory.factory.langgraph_checkpoint import create_checkpointer
+try:
+    from sap_cloud_sdk.agent_decorators import agent_config, agent_model, prompt_section
+    from sap_cloud_sdk.agent_memory.factory.langgraph_checkpoint import create_checkpointer
+except ImportError:
+    # Running in CF without sap-cloud-sdk — use no-op decorators
+    def agent_model(**kwargs):
+        def decorator(fn): return fn
+        return decorator
+    def agent_config(**kwargs):
+        def decorator(fn): return fn
+        return decorator
+    def prompt_section(**kwargs):
+        def decorator(fn): return fn
+        return decorator
+    def create_checkpointer(**kwargs):
+        from langgraph.checkpoint.memory import MemorySaver
+        return MemorySaver()
 from circuit_breaker import CircuitBreaker
 from mcp_providers.agw import get_user_sub
 

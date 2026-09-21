@@ -4,8 +4,12 @@ from pathlib import Path
 from typing import Any
 from langchain_core.tools import BaseTool, StructuredTool
 from pydantic import Field, create_model
-from sap_cloud_sdk.agentgateway import create_client
-from sap_cloud_sdk.agentgateway.converters import mcp_tool_to_langchain
+try:
+    from sap_cloud_sdk.agentgateway import create_client
+    from sap_cloud_sdk.agentgateway.converters import mcp_tool_to_langchain
+except ImportError:
+    create_client = None
+    mcp_tool_to_langchain = None
 from util import call_mcp_tool_with_retry
 logger = logging.getLogger(__name__)
 _user_token_context: ContextVar[str | None] = ContextVar("user_token", default=None)
