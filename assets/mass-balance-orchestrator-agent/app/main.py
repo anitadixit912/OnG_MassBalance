@@ -26,6 +26,16 @@ def main(host, port):
             try: return await call_next(request)
             finally: reset_user_token(token_ctx)
     app.add_middleware(JWTContextMiddleware)
+
+    # Health check endpoint for CF
+    from starlette.responses import JSONResponse
+    from starlette.routing import Route
+
+    async def health(request):
+        return JSONResponse({"status": "ok"})
+
+    app.routes.append(Route("/health", health))
+
     uvicorn.run(app, host=host, port=port)
 if __name__ == "__main__":
     main()
