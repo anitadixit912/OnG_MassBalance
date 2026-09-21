@@ -9,4 +9,3 @@ applications:
     health-check-type: process
     env:
       PYTHONPATH: .
-      PORT: "5000"

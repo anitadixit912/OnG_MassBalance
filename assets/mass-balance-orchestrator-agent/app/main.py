@@ -9,7 +9,7 @@ from agent_executor import AgentExecutor
 from mcp_providers.agw import set_user_token, reset_user_token
 logging.basicConfig(level=logging.INFO)
 HOST = os.environ.get("HOST", "0.0.0.0")
-PORT = int(os.environ.get("PORT", "5000"))
+PORT = int(os.environ.get("PORT", "8080"))
 @click.command()
 @click.option("--host", default=HOST)
 @click.option("--port", default=PORT)
