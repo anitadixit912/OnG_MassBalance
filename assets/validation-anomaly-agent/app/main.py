@@ -1,12 +1,9 @@
-from sap_cloud_sdk.aicore import set_aicore_config
-set_aicore_config()
 import logging, os
 import click, uvicorn
 from a2a.server.apps import A2AStarletteApplication
 from a2a.server.request_handlers import DefaultRequestHandler
 from a2a.server.tasks import InMemoryTaskStore
 from a2a.types import AgentCapabilities, AgentCard, AgentSkill
-from sap_cloud_sdk import bootstrap
 from starlette.middleware.base import BaseHTTPMiddleware
 from agent_executor import AgentExecutor
 from mcp_providers.agw import set_user_token, reset_user_token
@@ -34,7 +31,6 @@ def main(host: str, port: int):
             finally:
                 reset_user_token(token_ctx)
     app.add_middleware(JWTContextMiddleware)
-    bootstrap(app)
     uvicorn.run(app, host=host, port=port)
 
 if __name__ == "__main__":

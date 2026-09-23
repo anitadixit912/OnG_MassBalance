@@ -1,6 +1,6 @@
 applications:
   - name: calculation-reconciliation-agent
-    memory: 256M
+    memory: 208M
     disk_quota: 768M
     buildpacks:
       - python_buildpack
@@ -13,6 +13,7 @@ applications:
       AICORE_DESTINATION_NAME: aicore
       AICORE_RESOURCE_GROUP: default
       LOG_LEVEL: INFO
+      AGENT_PUBLIC_URL: https://calculation-reconciliation-agent.cfapps.us10.hana.ondemand.com
     services:
       - proj-vector-destination-service
       - proj-vector-connectivity-service

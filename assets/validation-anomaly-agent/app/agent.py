@@ -14,6 +14,7 @@ from sap_cloud_sdk.agent_decorators import agent_config, agent_model, prompt_sec
 from sap_cloud_sdk.agent_memory.factory.langgraph_checkpoint import create_checkpointer
 from circuit_breaker import CircuitBreaker
 from mcp_providers.agw import get_user_sub
+from mcp_providers.aicore import get_aicore_litellm_params
 
 logger = logging.getLogger(__name__)
 RETRYABLE_ERRORS = (APIConnectionError, Timeout, RateLimitError, ServiceUnavailableError, InternalServerError)
@@ -113,8 +114,17 @@ class SampleAgent:
         self._temperature = get_temperature()
         _cache_kwargs = {"cache_control_injection_points": [{"location": "message", "role": "system", "control": {"type": "ephemeral"}}]}
 
+        _aicore = get_aicore_litellm_params("aicore")
+
         def _build_llm(model: str) -> ChatLiteLLM:
-            return ChatLiteLLM(model=model, temperature=self._temperature, model_kwargs=_cache_kwargs)
+            return ChatLiteLLM(
+                model=_aicore["model"],
+                api_base=_aicore["api_base"],
+                api_key=_aicore["api_key"],
+                temperature=self._temperature,
+                extra_headers=_aicore.get("extra_headers", {}),
+                model_kwargs=_cache_kwargs,
+            )
 
         fallback_models = [m.strip() for m in get_fallback_model_names().split(",") if m.strip()]
         ordered_models = list(dict.fromkeys([self._primary_model, *fallback_models]))
