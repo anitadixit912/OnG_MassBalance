@@ -1,0 +1,18 @@
+applications:
+  - name: validation-anomaly-agent
+    memory: 256M
+    disk_quota: 768M
+    buildpacks:
+      - python_buildpack
+    no-route: false
+    health-check-type: http
+    health-check-http-endpoint: /.well-known/agent.json
+    env:
+      PYTHONPATH: .
+      AICORE_DEPLOYMENT_ID: dbc88cbc32f1206e
+      AICORE_DESTINATION_NAME: aicore
+      AICORE_RESOURCE_GROUP: default
+      LOG_LEVEL: INFO
+    services:
+      - proj-vector-destination-service
+      - proj-vector-connectivity-service

@@ -37,7 +37,7 @@ class AgentExecutor(A2AAgentExecutor):
                     break
                 elif item["is_task_complete"]:
                     await updater.add_artifact([Part(root=TextPart(text=item["content"]))], name="validation_result")
-                    await updater.complete()
+                    await updater.update_status(TaskState.completed, new_agent_text_message(item["content"], task.context_id, task.id), final=True)
                     break
                 else:
                     await updater.update_status(TaskState.working, new_agent_text_message(item["content"], task.context_id, task.id))

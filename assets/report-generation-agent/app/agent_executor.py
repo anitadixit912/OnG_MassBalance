@@ -30,7 +30,7 @@ class AgentExecutor(A2AAgentExecutor):
                 if item["require_user_input"]:
                     await updater.update_status(TaskState.input_required, new_agent_text_message(item["content"], task.context_id, task.id), final=True); break
                 elif item["is_task_complete"]:
-                    await updater.add_artifact([Part(root=TextPart(text=item["content"]))], name="report_result"); await updater.complete(); break
+                    await updater.add_artifact([Part(root=TextPart(text=item["content"]))], name="report_result"); await updater.update_status(TaskState.completed, new_agent_text_message(item["content"], task.context_id, task.id), final=True); break
                 else: await updater.update_status(TaskState.working, new_agent_text_message(item["content"], task.context_id, task.id))
         except Exception as e: logger.exception("Agent execution error"); raise ServerError(error=InternalError()) from e
     async def cancel(self, context, event_queue): raise ServerError(error=UnsupportedOperationError())
