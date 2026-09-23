@@ -17,6 +17,9 @@ assets:
   # Single Orchestrator Agent (sub-agent logic handled via runtime skills)
   - ref: ./assets/mass-balance-orchestrator-agent/asset.yaml
 
+  # Standalone Reconciliation Agent
+  - ref: ./assets/mass-balance-reconciliation-agent/asset.yaml
+
   # Sub-Agent Assets — deployed as independent A2A services on CF
   - ref: ./assets/data-collection-agent/asset.yaml
   - ref: ./assets/validation-anomaly-agent/asset.yaml

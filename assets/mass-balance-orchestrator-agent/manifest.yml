@@ -9,7 +9,7 @@ applications:
     health-check-http-endpoint: /health
     env:
       PYTHONPATH: .
-      AICORE_DEPLOYMENT_ID: dbc88cbc32f1206e
+      AICORE_DEPLOYMENT_ID: d20b9095bde7c0ef
       AICORE_DESTINATION_NAME: aicore
       AICORE_RESOURCE_GROUP: default
       LOG_LEVEL: INFO

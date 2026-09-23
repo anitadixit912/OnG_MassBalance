@@ -1,6 +1,6 @@
 applications:
   - name: data-collection-agent
-    memory: 208M
+    memory: 176M
     disk_quota: 768M
     buildpacks:
       - python_buildpack

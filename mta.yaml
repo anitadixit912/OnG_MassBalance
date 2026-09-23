@@ -1,0 +1,163 @@
+_schema-version: "3.1"
+ID: mass-balance-refinery
+version: 1.0.0
+description: Refinery Mass Balance Reconciliation Multi-Agent System on SAP BTP
+
+modules:
+
+  # ── Orchestrator ──────────────────────────────────────────────────────────
+  - name: mass-balance-orchestrator-agent
+    type: application
+    path: assets/mass-balance-orchestrator-agent
+    parameters:
+      memory: 96M
+      disk-quota: 768M
+      health-check-type: http
+      health-check-http-endpoint: /health
+      buildpacks:
+        - python_buildpack
+    properties:
+      PYTHONPATH: .
+      AICORE_DEPLOYMENT_ID: d20b9095bde7c0ef
+      AICORE_DESTINATION_NAME: aicore
+      AICORE_RESOURCE_GROUP: default
+      LOG_LEVEL: INFO
+    requires:
+      - name: proj-vector-destination-service
+      - name: proj-vector-connectivity-service
+
+  # ── Standalone Reconciliation Agent ───────────────────────────────────────
+  - name: mass-balance-reconciliation-agent
+    type: application
+    path: assets/mass-balance-reconciliation-agent
+    parameters:
+      memory: 128M
+      disk-quota: 768M
+      health-check-type: http
+      health-check-http-endpoint: /.well-known/agent.json
+      buildpacks:
+        - python_buildpack
+    properties:
+      PYTHONPATH: .
+      AICORE_DEPLOYMENT_ID: d20b9095bde7c0ef
+      AICORE_DESTINATION_NAME: aicore
+      AICORE_RESOURCE_GROUP: default
+      LOG_LEVEL: INFO
+      AGENT_PUBLIC_URL: https://mass-balance-reconciliation-agent.cfapps.us10.hana.ondemand.com
+    requires:
+      - name: proj-vector-destination-service
+      - name: proj-vector-connectivity-service
+
+  # ── Sub-Agents ────────────────────────────────────────────────────────────
+  - name: data-collection-agent
+    type: application
+    path: assets/data-collection-agent
+    parameters:
+      memory: 176M
+      disk-quota: 768M
+      health-check-type: http
+      health-check-http-endpoint: /.well-known/agent.json
+      buildpacks:
+        - python_buildpack
+    properties:
+      PYTHONPATH: .
+      AICORE_DEPLOYMENT_ID: dbc88cbc32f1206e
+      AICORE_DESTINATION_NAME: aicore
+      AICORE_RESOURCE_GROUP: default
+      LOG_LEVEL: INFO
+      AGENT_PUBLIC_URL: https://data-collection-agent.cfapps.us10.hana.ondemand.com
+    requires:
+      - name: proj-vector-destination-service
+      - name: proj-vector-connectivity-service
+
+  - name: validation-anomaly-agent
+    type: application
+    path: assets/validation-anomaly-agent
+    parameters:
+      memory: 160M
+      disk-quota: 768M
+      health-check-type: http
+      health-check-http-endpoint: /.well-known/agent.json
+      buildpacks:
+        - python_buildpack
+    properties:
+      PYTHONPATH: .
+      AICORE_DEPLOYMENT_ID: dbc88cbc32f1206e
+      AICORE_DESTINATION_NAME: aicore
+      AICORE_RESOURCE_GROUP: default
+      LOG_LEVEL: INFO
+      AGENT_PUBLIC_URL: https://validation-anomaly-agent.cfapps.us10.hana.ondemand.com
+    requires:
+      - name: proj-vector-destination-service
+      - name: proj-vector-connectivity-service
+
+  - name: calculation-reconciliation-agent
+    type: application
+    path: assets/calculation-reconciliation-agent
+    parameters:
+      memory: 208M
+      disk-quota: 768M
+      health-check-type: http
+      health-check-http-endpoint: /.well-known/agent.json
+      buildpacks:
+        - python_buildpack
+    properties:
+      PYTHONPATH: .
+      AICORE_DEPLOYMENT_ID: dbc88cbc32f1206e
+      AICORE_DESTINATION_NAME: aicore
+      AICORE_RESOURCE_GROUP: default
+      LOG_LEVEL: INFO
+      AGENT_PUBLIC_URL: https://calculation-reconciliation-agent.cfapps.us10.hana.ondemand.com
+    requires:
+      - name: proj-vector-destination-service
+      - name: proj-vector-connectivity-service
+
+  - name: exception-management-agent
+    type: application
+    path: assets/exception-management-agent
+    parameters:
+      memory: 64M
+      disk-quota: 768M
+      health-check-type: http
+      health-check-http-endpoint: /.well-known/agent.json
+      buildpacks:
+        - python_buildpack
+    properties:
+      PYTHONPATH: .
+      AICORE_DEPLOYMENT_ID: dbc88cbc32f1206e
+      AICORE_DESTINATION_NAME: aicore
+      AICORE_RESOURCE_GROUP: default
+      LOG_LEVEL: INFO
+      AGENT_PUBLIC_URL: https://exception-management-agent.cfapps.us10.hana.ondemand.com
+    requires:
+      - name: proj-vector-destination-service
+      - name: proj-vector-connectivity-service
+
+  - name: report-generation-agent
+    type: application
+    path: assets/report-generation-agent
+    parameters:
+      memory: 160M
+      disk-quota: 768M
+      health-check-type: http
+      health-check-http-endpoint: /.well-known/agent.json
+      buildpacks:
+        - python_buildpack
+    properties:
+      PYTHONPATH: .
+      AICORE_DEPLOYMENT_ID: dbc88cbc32f1206e
+      AICORE_DESTINATION_NAME: aicore
+      AICORE_RESOURCE_GROUP: default
+      LOG_LEVEL: INFO
+      AGENT_PUBLIC_URL: https://report-generation-agent.cfapps.us10.hana.ondemand.com
+    requires:
+      - name: proj-vector-destination-service
+      - name: proj-vector-connectivity-service
+
+# ── Shared BTP Services ────────────────────────────────────────────────────
+resources:
+  - name: proj-vector-destination-service
+    type: org.cloudfoundry.existing-service
+
+  - name: proj-vector-connectivity-service
+    type: org.cloudfoundry.existing-service

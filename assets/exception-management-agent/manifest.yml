@@ -1,6 +1,6 @@
 applications:
   - name: exception-management-agent
-    memory: 96M
+    memory: 64M
     disk_quota: 768M
     buildpacks:
       - python_buildpack
