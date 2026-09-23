@@ -137,10 +137,16 @@ class SampleAgent:
         _aicore = get_aicore_litellm_params("aicore")
 
         def _llm(m):
+            model = _aicore.get("model", m)
+            api_base = _aicore.get("api_base") or None
+            api_key = _aicore.get("api_key") or None
+            # Use openai/ prefix for OpenAI-compatible SAP AI Core endpoint
+            if api_base and not model.startswith("openai/"):
+                model = f"openai/{model}"
             return ChatLiteLLM(
-                model=_aicore.get("model", m),
-                api_base=_aicore.get("api_base") or None,
-                api_key=_aicore.get("api_key") or None,
+                model=model,
+                api_base=api_base,
+                api_key=api_key,
                 temperature=self._temperature,
                 model_kwargs=_ck,
             )

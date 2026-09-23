@@ -9,7 +9,7 @@ applications:
     health-check-http-endpoint: /health
     env:
       PYTHONPATH: .
-      AI_MODEL: sap/anthropic--claude-4.5-sonnet
+      AI_MODEL: anthropic--claude-3.5-sonnet
     services:
       - proj-vector-destination-service
       - proj-vector-connectivity-service
