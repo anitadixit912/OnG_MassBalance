@@ -34,8 +34,12 @@ _CHAT_HTML = """<!DOCTYPE html>
   header { background: #003366; color: #fff; padding: 12px 24px; display: flex; align-items: center; gap: 12px; }
   header h1 { font-size: 1.1rem; font-weight: 600; }
   header span { font-size: 0.75rem; background: #0070d2; padding: 2px 8px; border-radius: 12px; }
+  .samples { background: #eef4fb; border-bottom: 1px solid #c8ddf5; padding: 8px 24px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .samples label { font-size: 0.75rem; color: #555; align-self: center; white-space: nowrap; }
+  .sample-btn { padding: 5px 12px; background: #fff; border: 1px solid #0070d2; border-radius: 16px; color: #0070d2; font-size: 0.78rem; cursor: pointer; white-space: nowrap; }
+  .sample-btn:hover { background: #0070d2; color: #fff; }
   .chat { flex: 1; overflow-y: auto; padding: 16px 24px; display: flex; flex-direction: column; gap: 12px; }
-  .msg { max-width: 75%; padding: 10px 14px; border-radius: 8px; font-size: 0.9rem; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+  .msg { max-width: 78%; padding: 10px 14px; border-radius: 8px; font-size: 0.9rem; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
   .msg.user { align-self: flex-end; background: #0070d2; color: #fff; }
   .msg.agent { align-self: flex-start; background: #fff; border: 1px solid #ddd; color: #222; }
   .msg.error { align-self: flex-start; background: #fff0f0; border: 1px solid #fcc; color: #c00; }
@@ -49,22 +53,35 @@ _CHAT_HTML = """<!DOCTYPE html>
 </head>
 <body>
 <header>
-  <h1>⚗️ Mass Balance Reconciliation Agent</h1>
-  <span>SAP AI Core · Claude 4.6</span>
+  <h1>&#9878;&#65039; Mass Balance Reconciliation Agent</h1>
+  <span>SAP AI Core &middot; Claude</span>
 </header>
+<div class="samples">
+  <label>Try:</label>
+  <button class="sample-btn" onclick="ask('Run daily mass balance for plant 1000 for today')">Run daily mass balance for plant 1000</button>
+  <button class="sample-btn" onclick="ask('Show all CRITICAL exceptions for this month')">Show CRITICAL exceptions this month</button>
+  <button class="sample-btn" onclick="ask('What is the closing stock for material CRUDE01 in plant 1000?')">Closing stock for CRUDE01</button>
+  <button class="sample-btn" onclick="ask('Explain the variance classification rules')">Variance classification rules</button>
+  <button class="sample-btn" onclick="ask('List all pending approval corrections')">Pending approval corrections</button>
+</div>
 <div class="chat" id="chat">
   <div class="msg agent">Hello! I am the <strong>Mass Balance Reconciliation Agent</strong>.<br><br>
-I automate the daily/monthly hydrocarbon mass balance reconciliation cycle for your refinery by pulling live data from SAP IS-Oil &amp; Gas via OGS_S4.<br><br>
-<em>Example: "Run daily mass balance for plant 1000 for today"</em></div>
+I automate the daily and monthly hydrocarbon mass balance reconciliation cycle for your refinery — pulling live data from SAP IS-Oil &amp; Gas (OGS_S4), validating completeness, calculating variances, and presenting exceptions for your approval before any SAP posting.<br><br>
+Click a sample question above or type your own below.</div>
 </div>
 <div class="context-id">Session: <span id="ctx-id"></span></div>
 <div class="input-row">
-  <textarea id="input" placeholder="Ask the agent to reconcile mass balance, show exceptions, approve corrections…" onkeydown="handleKey(event)"></textarea>
+  <textarea id="input" placeholder="Ask anything about mass balance reconciliation, exceptions, corrections…" onkeydown="handleKey(event)"></textarea>
   <button id="send-btn" onclick="sendMessage()">Send</button>
 </div>
 <script>
   const contextId = 'ctx-' + Math.random().toString(36).slice(2, 10);
   document.getElementById('ctx-id').textContent = contextId;
+
+  function ask(text) {
+    document.getElementById('input').value = text;
+    sendMessage();
+  }
 
   function handleKey(e) {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
@@ -89,7 +106,7 @@ I automate the daily/monthly hydrocarbon mass balance reconciliation cycle for y
     inp.value = '';
     btn.disabled = true;
     addMsg('user', text);
-    const thinking = addMsg('thinking', '⏳ Processing…');
+    const thinking = addMsg('thinking', '&#9203; Processing…');
 
     try {
       const res = await fetch('/', {
