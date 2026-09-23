@@ -134,6 +134,7 @@ modules:
         - python_buildpack
       routes:
         - route: exception-management-agent.cfapps.us10.hana.ondemand.com
+      no-start: true
     properties:
       PYTHONPATH: .
       AICORE_DEPLOYMENT_ID: dbc88cbc32f1206e
@@ -157,6 +158,7 @@ modules:
         - python_buildpack
       routes:
         - route: report-generation-agent.cfapps.us10.hana.ondemand.com
+      no-start: true
     properties:
       PYTHONPATH: .
       AICORE_DEPLOYMENT_ID: dbc88cbc32f1206e
