@@ -99,7 +99,7 @@ def get_aicore_litellm_params(destination_name: str = "aicore") -> dict:
             # Default model — can be overridden via env var
             "model": os.environ.get(
                 "AI_MODEL",
-                "openai/gpt-4o"  # SAP AI Core model deployment name
+                "sap/anthropic--claude-4.5-sonnet"
             ),
         }
         logger.info("AI Core destination resolved: %s", api_base)
