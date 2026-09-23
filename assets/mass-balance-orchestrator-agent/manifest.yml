@@ -1,7 +1,7 @@
 applications:
   - name: mass-balance-orchestrator-agent
-    memory: 512M
-    disk_quota: 1G
+    memory: 256M
+    disk_quota: 768M
     buildpacks:
       - python_buildpack
     no-route: false
