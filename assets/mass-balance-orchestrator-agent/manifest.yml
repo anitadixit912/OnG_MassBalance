@@ -9,3 +9,6 @@ applications:
     health-check-http-endpoint: /health
     env:
       PYTHONPATH: .
+      AI_MODEL: openai/gpt-4o
+    services:
+      - destination

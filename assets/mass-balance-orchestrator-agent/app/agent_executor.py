@@ -8,6 +8,7 @@ from a2a.utils.errors import ServerError
 from agent import SampleAgent
 from load_skill_resources import get_load_skill_resource_tool
 from mcp_providers.agw import get_mcp_tools
+from mcp_providers.ogs_s4_tools import get_ogs_s4_tools
 from prompt_injection_detector import wrap_tool
 logger = logging.getLogger(__name__)
 class AgentExecutor(A2AAgentExecutor):
@@ -22,7 +23,9 @@ class AgentExecutor(A2AAgentExecutor):
             await event_queue.enqueue_event(task)
         tools = []
         try: tools = await get_mcp_tools()
-        except Exception as e: logger.error(f"Failed to load tools: {e}")
+        except Exception as e: logger.error(f"Failed to load MCP tools: {e}")
+        try: tools += get_ogs_s4_tools()
+        except Exception as e: logger.error(f"Failed to load OGS_S4 tools: {e}")
         tools = [wrap_tool(t) for t in [*tools, *self.skill_tools]]
         updater = TaskUpdater(event_queue, task.id, task.context_id)
         try:
