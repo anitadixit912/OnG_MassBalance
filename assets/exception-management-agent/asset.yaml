@@ -14,10 +14,6 @@ agentCard:
 container:
   port: 5000
 
-models:
-  - executableId: aws-bedrock
-    name: anthropic--claude-4.5-sonnet
-
 provides:
   apis:
     - name: exception-management-agent
@@ -25,6 +21,10 @@ provides:
       ordId: customer.build:apiResource:mass-balance-reconciliation-a37df.exception-management-agent:v1
 
 requires:
+  - name: destination
+    kind: platform-service
+    service: destination
+    plan: lite
   - name: sap-s4-material-document-mcp-server
     kind: mcp-server
     ordId: customer.build:apiResource:mass-balance-reconciliation-a37df.sap-s4-material-document-mcp-server:v1

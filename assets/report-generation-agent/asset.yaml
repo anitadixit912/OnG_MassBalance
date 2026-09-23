@@ -14,12 +14,14 @@ agentCard:
 container:
   port: 5000
 
-models:
-  - executableId: aws-bedrock
-    name: anthropic--claude-4.5-sonnet
-
 provides:
   apis:
     - name: report-generation-agent
       kind: a2a
       ordId: customer.build:apiResource:mass-balance-reconciliation-a37df.report-generation-agent:v1
+
+requires:
+  - name: destination
+    kind: platform-service
+    service: destination
+    plan: lite
