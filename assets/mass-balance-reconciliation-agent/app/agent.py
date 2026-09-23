@@ -218,7 +218,15 @@ class SampleAgent:
             system_prompt = get_system_prompt()
             extra: list = []
             if not tools:
-                extra.append(SystemMessage(content="IMPORTANT: No tools are currently available. Do not attempt to call any tools."))
+                extra.append(SystemMessage(content="""DEMO MODE — live SAP connection unavailable (authentication required for real data).
+You MUST still respond fully and helpfully. Use realistic but clearly simulated refinery data.
+Rules for demo mode:
+- Proceed through the full reconciliation workflow as if real data were available
+- Use plausible values for a petroleum refinery (crude oil, naphtha, diesel, etc.)
+- Label every data value with [DEMO] so the user knows it is simulated
+- Show the complete workflow: data ingestion → validation → calculation → variance → exceptions
+- Do NOT refuse or say you cannot help — demonstrate exactly what you would do with live SAP data
+- End with: "In production, these values would come live from SAP IS-Oil & Gas via OGS_S4." """))
 
             result = await self._invoke_with_fallback(
                 tools=tools or [], system_prompt=system_prompt,
