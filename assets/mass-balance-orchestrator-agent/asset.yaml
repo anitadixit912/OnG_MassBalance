@@ -23,6 +23,23 @@ requires:
     service: destination
     plan: lite
 
+  # Sub-Agents — A2A services coordinated by this orchestrator
+  - name: data-collection-agent
+    kind: a2a
+    ordId: customer.build:apiResource:mass-balance-reconciliation-a37df.data-collection-agent:v1
+  - name: validation-anomaly-agent
+    kind: a2a
+    ordId: customer.build:apiResource:mass-balance-reconciliation-a37df.validation-anomaly-agent:v1
+  - name: calculation-reconciliation-agent
+    kind: a2a
+    ordId: customer.build:apiResource:mass-balance-reconciliation-a37df.calculation-reconciliation-agent:v1
+  - name: exception-management-agent
+    kind: a2a
+    ordId: customer.build:apiResource:mass-balance-reconciliation-a37df.exception-management-agent:v1
+  - name: report-generation-agent
+    kind: a2a
+    ordId: customer.build:apiResource:mass-balance-reconciliation-a37df.report-generation-agent:v1
+
   # MCP Servers — SAP OData APIs via OGS_S4 destination
   - name: sap-s4-material-stock-mcp-server
     kind: mcp-server

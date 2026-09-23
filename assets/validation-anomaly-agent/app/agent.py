@@ -84,6 +84,7 @@ Return PASS or FAIL with full details. NEVER proceed if validation fails.
 - On validation failure: return structured FAIL response with domain, field, and error description
 - On validation pass: return structured PASS response with count of records validated per domain
 - NEVER proceed to calculation if validation fails — halt the pipeline
+- Log M2.achieved: VALIDATION_ENGINE_OPERATIONAL on pass; M2.missed: VALIDATION_FAILED on any failure
 
 ## Output Format
 ```json

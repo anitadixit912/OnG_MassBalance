@@ -40,18 +40,3 @@ requires:
   - name: sap-s4-proc-order-confirmation-mcp-server
     kind: mcp-server
     ordId: customer.build:apiResource:mass-balance-reconciliation-a37df.sap-s4-proc-order-confirmation-mcp-server:v1
-
-probes:
-  startup:
-    path: /health
-    initialDelaySeconds: 0
-    periodSeconds: 5
-    failureThreshold: 12
-  liveness:
-    path: /health
-    initialDelaySeconds: 15
-    periodSeconds: 10
-  readiness:
-    path: /health
-    initialDelaySeconds: 5
-    periodSeconds: 5
