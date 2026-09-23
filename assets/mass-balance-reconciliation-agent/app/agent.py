@@ -7,15 +7,8 @@ from langchain.agents import create_agent
 from langchain.agents.middleware import SummarizationMiddleware
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.tools import BaseTool
-from langchain_litellm import ChatLiteLLM
 from langgraph.graph.state import CompiledStateGraph
-from litellm.exceptions import (
-    APIConnectionError,
-    InternalServerError,
-    RateLimitError,
-    ServiceUnavailableError,
-    Timeout,
-)
+import httpx
 try:
     from sap_cloud_sdk.agent_decorators import agent_config, agent_model, prompt_section
     from sap_cloud_sdk.agent_memory.factory.langgraph_checkpoint import create_checkpointer
@@ -35,16 +28,9 @@ except ImportError:
 from circuit_breaker import CircuitBreaker
 from mcp_providers.agw import get_user_sub
 from mcp_providers.aicore import get_aicore_litellm_params
+from aicore_claude import AICoreClaudeChatModel
 
 logger = logging.getLogger(__name__)
-
-RETRYABLE_ERRORS: tuple[type[Exception], ...] = (
-    APIConnectionError,
-    Timeout,
-    RateLimitError,
-    ServiceUnavailableError,
-    InternalServerError,
-)
 
 _DEFENSIVE_PROMPT_SUFFIX = """
 
@@ -188,92 +174,39 @@ class SampleAgent:
 
     def __init__(self):
         ttl = thread_ttl_seconds()
-        self._primary_model = get_model_name()
         self._temperature = get_temperature()
-
-        _cache_kwargs = {
-            "cache_control_injection_points": [
-                {"location": "message", "role": "system", "control": {"type": "ephemeral"}}
-            ]
-        }
-
         _aicore = get_aicore_litellm_params("aicore")
-
-        def _build_llm(model: str) -> ChatLiteLLM:
-            return ChatLiteLLM(
-                model=_aicore["model"],
-                api_base=_aicore["api_base"],
-                api_key=_aicore["api_key"],
-                temperature=self._temperature,
-                extra_headers=_aicore.get("extra_headers", {}),
-                model_kwargs=_cache_kwargs,
-            )
-
-        fallback_models = [m.strip() for m in get_fallback_model_names().split(",") if m.strip()]
-        ordered_models = list(dict.fromkeys([self._primary_model, *fallback_models]))
-        self._model_chain: list[tuple[str, ChatLiteLLM]] = [(name, _build_llm(name)) for name in ordered_models]
-        self.llm = self._model_chain[0][1]
-
-        threshold = get_circuit_breaker_failure_threshold()
-        self._breaker: CircuitBreaker | None = (
-            CircuitBreaker(failure_threshold=threshold, cooldown_seconds=get_circuit_breaker_cooldown_seconds())
-            if threshold >= 1 else None
+        self.llm = AICoreClaudeChatModel(
+            api_base=_aicore["api_base"],
+            api_key=_aicore["api_key"],
+            resource_group=_aicore.get("extra_headers", {}).get("AI-Resource-Group", "default"),
+            temperature=self._temperature,
         )
         self._checkpointer = create_checkpointer(ttl_seconds=ttl or None)
-        summarization_llm = ChatLiteLLM(model=get_summarization_model_name(), temperature=0.0)
+        summarization_llm = AICoreClaudeChatModel(
+            api_base=_aicore["api_base"],
+            api_key=_aicore["api_key"],
+            resource_group=_aicore.get("extra_headers", {}).get("AI-Resource-Group", "default"),
+            temperature=0.0,
+            max_tokens=1024,
+        )
         self._summarization_middleware = SummarizationMiddleware(
             model=summarization_llm,
             trigger=("tokens", summarization_trigger_tokens()),
             keep=("messages", 4),
         )
 
-    def _create_graph(self, llm: ChatLiteLLM, tools: Sequence[BaseTool], system_prompt: str) -> CompiledStateGraph:
+    def _create_graph(self, tools: Sequence[BaseTool], system_prompt: str) -> CompiledStateGraph:
         return create_agent(
-            llm, tools=list(tools), system_prompt=system_prompt,
+            self.llm, tools=list(tools), system_prompt=system_prompt,
             checkpointer=self._checkpointer, middleware=[self._summarization_middleware],
         )
 
     async def _invoke_with_fallback(self, tools: Sequence[BaseTool], system_prompt: str, query: str, context_id: str, extra_messages: list | None = None) -> dict[str, Any]:
         config = {"configurable": {"thread_id": f"{get_user_sub()}:{context_id}"}}
         messages = {"messages": (extra_messages or []) + [HumanMessage(content=query)]}
-
-        async def _run(llm: ChatLiteLLM) -> dict[str, Any]:
-            graph = self._create_graph(llm, tools, system_prompt)
-            return await graph.ainvoke(messages, config)
-
-        last_error: Exception | None = None
-        attempted = False
-        for model_name, llm in self._model_chain:
-            if self._breaker and not await self._breaker.allows(model_name):
-                logger.info("Skipping model '%s': circuit breaker is open.", model_name)
-                continue
-            attempted = True
-            try:
-                result = await _run(llm)
-            except RETRYABLE_ERRORS as err:
-                last_error = err
-                if self._breaker:
-                    await self._breaker.record_failure(model_name)
-                logger.warning("Model '%s' failed (%s). Trying next model.", model_name, err)
-                continue
-            if self._breaker:
-                await self._breaker.record_success(model_name)
-            return result
-
-        if not attempted:
-            model_name, llm = self._model_chain[0]
-            try:
-                result = await _run(llm)
-            except RETRYABLE_ERRORS:
-                if self._breaker:
-                    await self._breaker.record_failure(model_name)
-                raise
-            if self._breaker:
-                await self._breaker.record_success(model_name)
-            return result
-
-        assert last_error is not None
-        raise last_error
+        graph = self._create_graph(tools, system_prompt)
+        return await graph.ainvoke(messages, config)
 
     async def stream(self, query: str, context_id: str, tools: Sequence[BaseTool] | None = None) -> AsyncGenerator[dict, None]:
         yield {"is_task_complete": False, "require_user_input": False, "content": "Processing..."}
