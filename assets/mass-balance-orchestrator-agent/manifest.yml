@@ -9,7 +9,10 @@ applications:
     health-check-http-endpoint: /health
     env:
       PYTHONPATH: .
-      AI_MODEL: dbc88cbc32f1206e
+      AICORE_DEPLOYMENT_ID: dbc88cbc32f1206e
+      AICORE_DESTINATION_NAME: aicore
+      AICORE_RESOURCE_GROUP: default
+      LOG_LEVEL: INFO
     services:
       - proj-vector-destination-service
       - proj-vector-connectivity-service

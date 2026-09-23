@@ -27,7 +27,6 @@ except ImportError:
         return MemorySaver()
 from circuit_breaker import CircuitBreaker
 from mcp_providers.agw import get_user_sub
-from mcp_providers.aicore import get_aicore_litellm_params
 
 logger = logging.getLogger(__name__)
 RETRYABLE_ERRORS = (APIConnectionError, Timeout, RateLimitError, ServiceUnavailableError, InternalServerError)
@@ -133,20 +132,11 @@ class SampleAgent:
         self._temperature = get_temperature()
         _ck = {"cache_control_injection_points": [{"location": "message", "role": "system", "control": {"type": "ephemeral"}}]}
 
-        # Resolve SAP AI Core via BTP destination 'aicore'
-        _aicore = get_aicore_litellm_params("aicore")
-
         def _llm(m):
-            model = _aicore.get("model", m)
-            api_base = _aicore.get("api_base") or None
-            api_key = _aicore.get("api_key") or None
-            # Use openai/ prefix for OpenAI-compatible SAP AI Core endpoint
-            if api_base and not model.startswith("openai/"):
-                model = f"openai/{model}"
+            # LiteLLM reads AICORE_DEPLOYMENT_ID, AICORE_DESTINATION_NAME,
+            # AICORE_RESOURCE_GROUP automatically via sap/ prefix
             return ChatLiteLLM(
-                model=model,
-                api_base=api_base,
-                api_key=api_key,
+                model=f"sap/{self._primary_model}",
                 temperature=self._temperature,
                 model_kwargs=_ck,
             )
