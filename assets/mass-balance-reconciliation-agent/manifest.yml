@@ -1,5 +1,5 @@
 applications:
-  - name: exception-management-agent
+  - name: mass-balance-reconciliation-agent
     memory: 96M
     disk_quota: 768M
     buildpacks:
@@ -13,7 +13,7 @@ applications:
       AICORE_DESTINATION_NAME: aicore
       AICORE_RESOURCE_GROUP: default
       LOG_LEVEL: INFO
-      AGENT_PUBLIC_URL: https://exception-management-agent.cfapps.us10.hana.ondemand.com
+      AGENT_PUBLIC_URL: https://mass-balance-reconciliation-agent.cfapps.us10.hana.ondemand.com
     services:
       - proj-vector-destination-service
       - proj-vector-connectivity-service
