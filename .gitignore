@@ -10,3 +10,5 @@ build/
 venv/
 coverage.json
 test_report.json
+mta_archives/
+.OnG_MassBalance_mta_build_tmp/
