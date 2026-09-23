@@ -32,8 +32,17 @@ _CHAT_HTML = """<!DOCTYPE html>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; height: 100vh; display: flex; flex-direction: column; }
   header { background: #003366; color: #fff; padding: 12px 24px; display: flex; align-items: center; gap: 12px; }
-  header h1 { font-size: 1.1rem; font-weight: 600; }
-  header span { font-size: 0.75rem; background: #0070d2; padding: 2px 8px; border-radius: 12px; }
+  header h1 { font-size: 1.1rem; font-weight: 600; flex: 1; }
+  header span.badge { font-size: 0.75rem; background: #0070d2; padding: 2px 8px; border-radius: 12px; }
+  #token-status { font-size: 0.78rem; cursor: pointer; padding: 3px 10px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.4); }
+  #token-status.ok { background: #1a7f3c; border-color: #1a7f3c; }
+  #token-status.missing { background: #b00020; border-color: #b00020; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.6} }
+  .token-panel { background: #fff8e1; border-bottom: 2px solid #ffc107; padding: 10px 24px; display: flex; align-items: center; gap: 10px; font-size: 0.85rem; }
+  .token-panel.hidden { display: none; }
+  .token-panel code { background: #fffde7; border: 1px solid #ffc107; padding: 1px 6px; border-radius: 3px; font-size: 0.82rem; }
+  .token-panel input { flex: 1; padding: 7px 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.82rem; font-family: monospace; }
+  .token-panel button { padding: 6px 14px; background: #003366; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 0.82rem; white-space: nowrap; }
   .samples { background: #eef4fb; border-bottom: 1px solid #c8ddf5; padding: 8px 24px; display: flex; gap: 8px; flex-wrap: wrap; }
   .samples label { font-size: 0.75rem; color: #555; align-self: center; white-space: nowrap; }
   .sample-btn { padding: 5px 12px; background: #fff; border: 1px solid #0070d2; border-radius: 16px; color: #0070d2; font-size: 0.78rem; cursor: pointer; white-space: nowrap; }
@@ -54,34 +63,81 @@ _CHAT_HTML = """<!DOCTYPE html>
 <body>
 <header>
   <h1>&#9878;&#65039; Mass Balance Reconciliation Agent</h1>
-  <span>SAP AI Core &middot; Claude</span>
+  <span class="badge">SAP AI Core &middot; Claude</span>
+  <span id="token-status" class="missing" onclick="toggleTokenPanel()" title="Click to set token">&#128274; No token</span>
 </header>
+
+<!-- Token panel — hidden once token is set -->
+<div class="token-panel" id="token-panel">
+  <strong>One-time setup:</strong>
+  Run <code>cf oauth-token</code> in a terminal, paste below, click Save.
+  Token is stored in your browser and lasts ~10 hours.
+  <input type="password" id="token-input" placeholder="Paste CF oauth-token here…" />
+  <button onclick="saveToken()">Save &amp; Connect</button>
+  <button onclick="clearToken()" style="background:#888">Clear</button>
+</div>
+
 <div class="samples">
   <label>Try:</label>
   <button class="sample-btn" onclick="ask('Run daily mass balance for plant 1000 for today')">Run daily mass balance for plant 1000</button>
-  <button class="sample-btn" onclick="ask('Show all CRITICAL exceptions for this month')">Show CRITICAL exceptions this month</button>
-  <button class="sample-btn" onclick="ask('What is the closing stock for material CRUDE01 in plant 1000?')">Closing stock for CRUDE01</button>
-  <button class="sample-btn" onclick="ask('Explain the variance classification rules')">Variance classification rules</button>
-  <button class="sample-btn" onclick="ask('List all pending approval corrections')">Pending approval corrections</button>
+  <button class="sample-btn" onclick="ask('Show all CRITICAL exceptions for this month')">Show CRITICAL exceptions</button>
+  <button class="sample-btn" onclick="ask('What is the closing stock for material CRUDE01 in plant 1000?')">Closing stock CRUDE01</button>
+  <button class="sample-btn" onclick="ask('List all pending approval corrections')">Pending corrections</button>
+  <button class="sample-btn" onclick="ask('Explain the variance classification rules')">Variance rules</button>
 </div>
+
 <div class="chat" id="chat">
   <div class="msg agent">Hello! I am the <strong>Mass Balance Reconciliation Agent</strong>.<br><br>
-I automate the daily and monthly hydrocarbon mass balance reconciliation cycle for your refinery — pulling live data from SAP IS-Oil &amp; Gas (OGS_S4), validating completeness, calculating variances, and presenting exceptions for your approval before any SAP posting.<br><br>
-Click a sample question above or type your own below.</div>
+I automate the daily and monthly hydrocarbon mass balance reconciliation cycle — pulling <strong>live data from SAP IS-Oil &amp; Gas (OGS_S4)</strong>, validating, calculating variances, and raising exceptions for your approval.<br><br>
+<strong>To access live SAP data:</strong> click the red padlock in the header and set your CF token once.</div>
 </div>
 <div class="context-id">Session: <span id="ctx-id"></span></div>
 <div class="input-row">
-  <textarea id="input" placeholder="Ask anything about mass balance reconciliation, exceptions, corrections…" onkeydown="handleKey(event)"></textarea>
+  <textarea id="input" placeholder="Ask the agent to run mass balance, show exceptions, approve corrections…" onkeydown="handleKey(event)"></textarea>
   <button id="send-btn" onclick="sendMessage()">Send</button>
 </div>
 <script>
+  const LS_KEY = 'mb_agent_cf_token';
   const contextId = 'ctx-' + Math.random().toString(36).slice(2, 10);
   document.getElementById('ctx-id').textContent = contextId;
 
-  function ask(text) {
-    document.getElementById('input').value = text;
-    sendMessage();
+  function loadToken() {
+    const t = localStorage.getItem(LS_KEY) || '';
+    if (t) {
+      document.getElementById('token-status').textContent = '\\u2705 Token set';
+      document.getElementById('token-status').className = 'ok';
+      document.getElementById('token-panel').className = 'token-panel hidden';
+    } else {
+      document.getElementById('token-status').textContent = '\\u{1F512} No token';
+      document.getElementById('token-status').className = 'missing';
+      document.getElementById('token-panel').className = 'token-panel';
+    }
+    return t;
   }
+
+  function saveToken() {
+    const raw = document.getElementById('token-input').value.trim();
+    const t = raw.replace(/^bearer /i, '');
+    if (!t) return;
+    localStorage.setItem(LS_KEY, t);
+    document.getElementById('token-input').value = '';
+    loadToken();
+    addMsg('agent', '\\u2705 Token saved. Live SAP data is now enabled. Ask me anything!');
+  }
+
+  function clearToken() {
+    localStorage.removeItem(LS_KEY);
+    loadToken();
+  }
+
+  function toggleTokenPanel() {
+    const p = document.getElementById('token-panel');
+    p.className = p.className.includes('hidden') ? 'token-panel' : 'token-panel hidden';
+  }
+
+  loadToken();
+
+  function ask(text) { document.getElementById('input').value = text; sendMessage(); }
 
   function handleKey(e) {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
@@ -103,15 +159,24 @@ Click a sample question above or type your own below.</div>
     const text = inp.value.trim();
     if (!text) return;
 
+    const token = loadToken();
+    if (!token) {
+      addMsg('error', '\\u26A0\\uFE0F No CF token set. Click the red padlock in the header, paste your token (cf oauth-token), and click Save.');
+      return;
+    }
+
     inp.value = '';
     btn.disabled = true;
     addMsg('user', text);
-    const thinking = addMsg('thinking', '&#9203; Processing…');
+    const thinking = addMsg('thinking', '\\u23F3 Processing…');
 
     try {
       const res = await fetch('/', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + token
+        },
         body: JSON.stringify({
           jsonrpc: '2.0', id: 'msg-' + Date.now(), method: 'message/send',
           params: { message: {
@@ -127,7 +192,7 @@ Click a sample question above or type your own below.</div>
       addMsg('agent', reply);
     } catch (e) {
       thinking.remove();
-      addMsg('error', '❌ Request failed: ' + e.message);
+      addMsg('error', '\\u274C Request failed: ' + e.message);
     } finally {
       btn.disabled = false;
       inp.focus();
