@@ -15,10 +15,6 @@ container:
   buildPath: .
   port: 5000
 
-models:
-  - executableId: aws-bedrock
-    name: anthropic--claude-4.5-sonnet
-
 provides:
   apis:
     - name: mass-balance-reconciliation-agent
