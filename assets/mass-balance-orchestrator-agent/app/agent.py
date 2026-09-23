@@ -1,4 +1,5 @@
 import logging
+import os
 from dataclasses import dataclass
 from typing import Any, AsyncGenerator, Literal, Sequence
 
@@ -27,6 +28,7 @@ except ImportError:
         return MemorySaver()
 from circuit_breaker import CircuitBreaker
 from mcp_providers.agw import get_user_sub
+from mcp_providers.aicore import get_aicore_litellm_params
 
 logger = logging.getLogger(__name__)
 RETRYABLE_ERRORS = (APIConnectionError, Timeout, RateLimitError, ServiceUnavailableError, InternalServerError)
@@ -132,12 +134,16 @@ class SampleAgent:
         self._temperature = get_temperature()
         _ck = {"cache_control_injection_points": [{"location": "message", "role": "system", "control": {"type": "ephemeral"}}]}
 
+        # Resolve AI Core via BTP destination service
+        _aicore = get_aicore_litellm_params("aicore")
+
         def _llm(m):
-            # LiteLLM reads AICORE_DEPLOYMENT_ID, AICORE_DESTINATION_NAME,
-            # AICORE_RESOURCE_GROUP automatically via sap/ prefix
             return ChatLiteLLM(
-                model=f"sap/{self._primary_model}",
+                model=_aicore["model"],
+                api_base=_aicore["api_base"],
+                api_key=_aicore["api_key"],
                 temperature=self._temperature,
+                extra_headers=_aicore.get("extra_headers", {}),
                 model_kwargs=_ck,
             )
 
