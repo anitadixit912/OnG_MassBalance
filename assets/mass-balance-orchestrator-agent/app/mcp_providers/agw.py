@@ -33,6 +33,9 @@ def _build_mock_tools():
     return tools
 async def get_mcp_tools():
     if os.environ.get("IBD_TESTING") == "1": return _build_mock_tools()
+    if create_client is None:
+        logger.warning("sap_cloud_sdk not available — running without MCP tools")
+        return []
     agw = create_client(); mcp = await agw.list_mcp_tools(user_token=_get_user_token)
     if not mcp: return []
     def _mk(t):
@@ -42,11 +45,10 @@ async def get_mcp_tools():
 def get_user_sub():
     token = _user_token_context.get()
     if not token:
-        if os.environ.get("IBD_TESTING") == "1": return "unknown"
-        raise ValueError("No user token")
+        return "anonymous"
     try:
         seg = token.split(".")[1]; pad = 4 - len(seg) % 4
         if pad != 4: seg += "=" * pad
-        return json.loads(base64.urlsafe_b64decode(seg)).get("sub", "unknown")
-    except Exception: return "unknown"
+        return json.loads(base64.urlsafe_b64decode(seg)).get("sub", "anonymous")
+    except Exception: return "anonymous"
 def reset_user_token(token: Token): _user_token_context.reset(token)
