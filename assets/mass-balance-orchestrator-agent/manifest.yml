@@ -11,4 +11,5 @@ applications:
       PYTHONPATH: .
       AI_MODEL: openai/gpt-4o
     services:
-      - destination
+      - proj-vector-destination-service
+      - proj-vector-connectivity-service
