@@ -203,7 +203,11 @@ class SampleAgent:
         )
 
     async def _invoke_with_fallback(self, tools: Sequence[BaseTool], system_prompt: str, query: str, context_id: str, extra_messages: list | None = None) -> dict[str, Any]:
-        config = {"configurable": {"thread_id": f"{get_user_sub()}:{context_id}"}}
+        try:
+            user_sub = get_user_sub()
+        except Exception:
+            user_sub = "ui-anonymous"
+        config = {"configurable": {"thread_id": f"{user_sub}:{context_id}"}}
         messages = {"messages": (extra_messages or []) + [HumanMessage(content=query)]}
         graph = self._create_graph(tools, system_prompt)
         return await graph.ainvoke(messages, config)
