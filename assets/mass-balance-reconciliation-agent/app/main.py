@@ -34,9 +34,6 @@ _CHAT_HTML = """<!DOCTYPE html>
   header { background: #003366; color: #fff; padding: 12px 24px; display: flex; align-items: center; gap: 12px; }
   header h1 { font-size: 1.1rem; font-weight: 600; }
   header span { font-size: 0.75rem; background: #0070d2; padding: 2px 8px; border-radius: 12px; }
-  .auth-bar { background: #fff3cd; border-bottom: 1px solid #ffc107; padding: 8px 24px; display: flex; align-items: center; gap: 12px; font-size: 0.85rem; }
-  .auth-bar input { flex: 1; padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.85rem; font-family: monospace; }
-  .auth-bar button { padding: 6px 14px; background: #003366; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85rem; }
   .chat { flex: 1; overflow-y: auto; padding: 16px 24px; display: flex; flex-direction: column; gap: 12px; }
   .msg { max-width: 75%; padding: 10px 14px; border-radius: 8px; font-size: 0.9rem; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
   .msg.user { align-self: flex-end; background: #0070d2; color: #fff; }
@@ -55,16 +52,9 @@ _CHAT_HTML = """<!DOCTYPE html>
   <h1>⚗️ Mass Balance Reconciliation Agent</h1>
   <span>SAP AI Core · Claude 4.6</span>
 </header>
-<div class="auth-bar">
-  <strong>🔑 CF Token:</strong>
-  <input type="password" id="token" placeholder="Paste your CF oauth-token here  (run: cf oauth-token)" />
-  <button onclick="saveToken()">Set</button>
-  <span id="token-status" style="color:#888">Not set</span>
-</div>
 <div class="chat" id="chat">
   <div class="msg agent">Hello! I am the <strong>Mass Balance Reconciliation Agent</strong>.<br><br>
 I automate the daily/monthly hydrocarbon mass balance reconciliation cycle for your refinery by pulling live data from SAP IS-Oil &amp; Gas via OGS_S4.<br><br>
-<strong>Before you begin:</strong> Paste your CF OAuth token above (<code>cf oauth-token</code>), then ask me to run a mass balance reconciliation.<br><br>
 <em>Example: "Run daily mass balance for plant 1000 for today"</em></div>
 </div>
 <div class="context-id">Session: <span id="ctx-id"></span></div>
@@ -75,13 +65,6 @@ I automate the daily/monthly hydrocarbon mass balance reconciliation cycle for y
 <script>
   const contextId = 'ctx-' + Math.random().toString(36).slice(2, 10);
   document.getElementById('ctx-id').textContent = contextId;
-  let token = '';
-
-  function saveToken() {
-    token = document.getElementById('token').value.trim();
-    document.getElementById('token-status').textContent = token ? '✅ Set' : 'Not set';
-    document.getElementById('token-status').style.color = token ? '#060' : '#888';
-  }
 
   function handleKey(e) {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
@@ -102,7 +85,6 @@ I automate the daily/monthly hydrocarbon mass balance reconciliation cycle for y
     const btn = document.getElementById('send-btn');
     const text = inp.value.trim();
     if (!text) return;
-    if (!token) { addMsg('error', '⚠️ Please set your CF token first (cf oauth-token).'); return; }
 
     inp.value = '';
     btn.disabled = true;
@@ -112,10 +94,7 @@ I automate the daily/monthly hydrocarbon mass balance reconciliation cycle for y
     try {
       const res = await fetch('/', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + token.replace(/^bearer /i, '')
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           jsonrpc: '2.0', id: 'msg-' + Date.now(), method: 'message/send',
           params: { message: {
