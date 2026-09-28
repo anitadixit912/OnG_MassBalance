@@ -28,6 +28,8 @@ _CHAT_HTML = """<!DOCTYPE html>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mass Balance Reconciliation Agent</title>
+<script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; height: 100vh; display: flex; flex-direction: column; }
@@ -36,8 +38,7 @@ _CHAT_HTML = """<!DOCTYPE html>
   header span.badge { font-size: 0.75rem; background: #0070d2; padding: 2px 8px; border-radius: 12px; }
   #token-status { font-size: 0.78rem; cursor: pointer; padding: 3px 10px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.4); }
   #token-status.ok { background: #1a7f3c; border-color: #1a7f3c; }
-  #token-status.missing { background: #b00020; border-color: #b00020; animation: pulse 2s infinite; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.6} }
+  #token-status.missing { background: #555; border-color: #555; }
   .token-panel { background: #fff8e1; border-bottom: 2px solid #ffc107; padding: 10px 24px; display: flex; align-items: center; gap: 10px; font-size: 0.85rem; }
   .token-panel.hidden { display: none; }
   .token-panel code { background: #fffde7; border: 1px solid #ffc107; padding: 1px 6px; border-radius: 3px; font-size: 0.82rem; }
@@ -48,11 +49,30 @@ _CHAT_HTML = """<!DOCTYPE html>
   .sample-btn { padding: 5px 12px; background: #fff; border: 1px solid #0070d2; border-radius: 16px; color: #0070d2; font-size: 0.78rem; cursor: pointer; white-space: nowrap; }
   .sample-btn:hover { background: #0070d2; color: #fff; }
   .chat { flex: 1; overflow-y: auto; padding: 16px 24px; display: flex; flex-direction: column; gap: 12px; }
-  .msg { max-width: 78%; padding: 10px 14px; border-radius: 8px; font-size: 0.9rem; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
-  .msg.user { align-self: flex-end; background: #0070d2; color: #fff; }
+  .msg { max-width: 82%; padding: 12px 16px; border-radius: 8px; font-size: 0.9rem; line-height: 1.6; word-break: break-word; }
+  .msg.user { align-self: flex-end; background: #0070d2; color: #fff; white-space: pre-wrap; }
   .msg.agent { align-self: flex-start; background: #fff; border: 1px solid #ddd; color: #222; }
-  .msg.error { align-self: flex-start; background: #fff0f0; border: 1px solid #fcc; color: #c00; }
+  .msg.error { align-self: flex-start; background: #fff0f0; border: 1px solid #fcc; color: #c00; white-space: pre-wrap; }
   .msg.thinking { align-self: flex-start; background: #f5f5f5; border: 1px dashed #ccc; color: #888; font-style: italic; }
+  /* Markdown styles inside .msg.agent */
+  .msg.agent h1,.msg.agent h2,.msg.agent h3 { margin: 10px 0 6px; font-weight: 700; line-height: 1.3; }
+  .msg.agent h1 { font-size: 1.2em; border-bottom: 1px solid #eee; padding-bottom: 4px; }
+  .msg.agent h2 { font-size: 1.05em; }
+  .msg.agent h3 { font-size: 0.95em; }
+  .msg.agent p { margin: 6px 0; }
+  .msg.agent ul,.msg.agent ol { margin: 6px 0 6px 20px; }
+  .msg.agent li { margin: 3px 0; }
+  .msg.agent strong { font-weight: 700; }
+  .msg.agent em { font-style: italic; }
+  .msg.agent code { background: #f4f4f4; border: 1px solid #ddd; border-radius: 3px; padding: 1px 5px; font-family: monospace; font-size: 0.88em; }
+  .msg.agent pre { background: #f4f4f4; border: 1px solid #ddd; border-radius: 4px; padding: 10px; overflow-x: auto; margin: 8px 0; }
+  .msg.agent pre code { background: none; border: none; padding: 0; }
+  .msg.agent table { border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 0.88em; }
+  .msg.agent th { background: #003366; color: #fff; padding: 6px 10px; text-align: left; }
+  .msg.agent td { border: 1px solid #ddd; padding: 5px 10px; }
+  .msg.agent tr:nth-child(even) td { background: #f9f9f9; }
+  .msg.agent blockquote { border-left: 3px solid #0070d2; margin: 8px 0; padding: 4px 12px; color: #555; background: #f5f8ff; }
+  .msg.agent hr { border: none; border-top: 1px solid #eee; margin: 10px 0; }
   .input-row { background: #fff; border-top: 1px solid #ddd; padding: 12px 24px; display: flex; gap: 10px; }
   .input-row textarea { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 6px; resize: none; font-size: 0.9rem; font-family: inherit; height: 60px; }
   .input-row button { padding: 0 20px; background: #003366; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 0.95rem; font-weight: 600; }
@@ -64,14 +84,12 @@ _CHAT_HTML = """<!DOCTYPE html>
 <header>
   <h1>&#9878;&#65039; Mass Balance Reconciliation Agent</h1>
   <span class="badge">SAP AI Core &middot; Claude</span>
-  <span id="token-status" class="missing" onclick="toggleTokenPanel()" title="Click to set token">&#128274; No token</span>
+  <span id="token-status" class="missing" onclick="toggleTokenPanel()" title="Set CF token for live SAP data">&#128274;</span>
 </header>
 
-<!-- Token panel — hidden once token is set -->
 <div class="token-panel hidden" id="token-panel">
-  <strong>One-time setup:</strong>
-  Run <code>cf oauth-token</code> in a terminal, paste below, click Save.
-  Token is stored in your browser and lasts ~10 hours.
+  <strong>Optional:</strong>
+  Run <code>cf oauth-token</code> in a terminal, paste below, click Save to enable live SAP data.
   <input type="password" id="token-input" placeholder="Paste CF oauth-token here…" />
   <button onclick="saveToken()">Save &amp; Connect</button>
   <button onclick="clearToken()" style="background:#888">Clear</button>
@@ -101,6 +119,8 @@ Click a sample question above or type your own below.</div>
   const contextId = 'ctx-' + Math.random().toString(36).slice(2, 10);
   document.getElementById('ctx-id').textContent = contextId;
 
+  marked.setOptions({ breaks: true, gfm: true });
+
   function loadToken() {
     const t = localStorage.getItem(LS_KEY) || '';
     if (t) {
@@ -120,7 +140,8 @@ Click a sample question above or type your own below.</div>
     localStorage.setItem(LS_KEY, t);
     document.getElementById('token-input').value = '';
     loadToken();
-    addMsg('agent', '\\u2705 Token saved. Live SAP data is now enabled. Ask me anything!');
+    document.getElementById('token-panel').className = 'token-panel hidden';
+    addAgentMsg('\\u2705 Token saved. Live SAP data is now enabled.');
   }
 
   function clearToken() {
@@ -151,6 +172,16 @@ Click a sample question above or type your own below.</div>
     return div;
   }
 
+  function addAgentMsg(markdown) {
+    const div = document.createElement('div');
+    div.className = 'msg agent';
+    div.innerHTML = DOMPurify.sanitize(marked.parse(markdown));
+    const chat = document.getElementById('chat');
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+    return div;
+  }
+
   async function sendMessage() {
     const inp = document.getElementById('input');
     const btn = document.getElementById('send-btn');
@@ -158,19 +189,18 @@ Click a sample question above or type your own below.</div>
     if (!text) return;
 
     const token = loadToken();
-
     inp.value = '';
     btn.disabled = true;
     addMsg('user', text);
     const thinking = addMsg('thinking', '\\u23F3 Processing…');
 
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+
     try {
       const res = await fetch('/', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + token
-        },
+        headers,
         body: JSON.stringify({
           jsonrpc: '2.0', id: 'msg-' + Date.now(), method: 'message/send',
           params: { message: {
@@ -183,7 +213,7 @@ Click a sample question above or type your own below.</div>
       thinking.remove();
       const arts = data?.result?.artifacts;
       const reply = arts?.[0]?.parts?.[0]?.text || data?.error?.message || JSON.stringify(data);
-      addMsg('agent', reply);
+      addAgentMsg(reply);
     } catch (e) {
       thinking.remove();
       addMsg('error', '\\u274C Request failed: ' + e.message);
