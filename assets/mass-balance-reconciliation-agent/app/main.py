@@ -83,7 +83,7 @@ _CHAT_HTML = """<!DOCTYPE html>
 <body>
 <header>
   <h1>&#9878;&#65039; Mass Balance Reconciliation Agent</h1>
-  <span class="badge">SAP AI Core &middot; Claude</span>
+  <span class="badge">OGS/IS-Oil AI</span>
   <span id="token-status" class="missing" onclick="toggleTokenPanel()" title="Set CF token for live SAP data">&#128274;</span>
 </header>
 
