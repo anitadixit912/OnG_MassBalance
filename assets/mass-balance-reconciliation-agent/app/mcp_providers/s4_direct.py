@@ -21,26 +21,34 @@ logger = logging.getLogger(__name__)
 
 # Ordered (service_path, entity_set) pairs to try for each domain.
 # Both 403 and 404 trigger fallback to the next entry.
-# Order: confirmed-403 (service exists, just needs auth) first, then 404 fallbacks.
-# ZC_ prefix = actual registered URL in this OGS/650 system.
+# API_MATERIAL_STOCK_SRV and C_STOCKQUANTITYVALUEBYTYPE_CDS ARE registered in Gateway
+# (return 404 "segment not found" = service found, entity set name wrong — try all variants).
+# OGS_MATERIAL_STOCK_SRV and ZC_ return 403 "No service found" = not yet in Gateway.
 _STOCK_PATHS = [
+    # Registered services — try all known entity set name variants (A_ prefix common in S/4HANA APIs)
+    ("/sap/opu/odata/sap/API_MATERIAL_STOCK_SRV", "A_MatlStkInAcctMod"),
+    ("/sap/opu/odata/sap/API_MATERIAL_STOCK_SRV", "MatlStkInAcctMod"),
+    ("/sap/opu/odata/sap/API_MATERIAL_STOCK_SRV", "MaterialStock"),
+    ("/sap/opu/odata/sap/API_MATERIAL_STOCK_SRV", "A_MaterialStock"),
+    ("/sap/opu/odata/sap/C_STOCKQUANTITYVALUEBYTYPE_CDS", "C_StockQtyValueByType"),
+    ("/sap/opu/odata/sap/C_STOCKQUANTITYVALUEBYTYPE_CDS", "C_StockQuantityValueByType"),
+    ("/sap/opu/odata/sap/C_STOCKQUANTITYVALUEBYTYPE_CDS", "StockQuantityValueByType"),
+    # Not-yet-registered services (need /IWFND/MAINT_SERVICE activation)
     ("/sap/opu/odata/sap/OGS_MATERIAL_STOCK_SRV", "MaterialStockSet"),
     ("/sap/opu/odata/sap/OGS_MATERIAL_STOCK_SRV", "StockBalanceSet"),
-    ("/sap/opu/odata/sap/OGS_MATERIAL_STOCK_SRV", "MaterialStock"),
-    ("/sap/opu/odata/sap/OGS_MATERIAL_STOCK_SRV", "InventoryStockSet"),
     ("/sap/opu/odata/sap/ZC_STOCKQUANTITYVALUEBYTYPE_CDS", "C_StockQuantityValueByType"),
-    ("/sap/opu/odata/sap/ZC_STOCKQUANTITYVALUEBYTYPE_CDS", "StockQuantityValueByType"),
-    ("/sap/opu/odata/sap/API_MATERIAL_STOCK_SRV", "MatlStkInAcctMod"),
-    ("/sap/opu/odata/sap/C_STOCKQUANTITYVALUEBYTYPE_CDS", "C_StockQuantityValueByType"),
 ]
 
 _MOVEMENT_PATHS = [
+    # Registered: API_MATERIAL_DOCUMENT_SRV — try A_ prefix variants
+    ("/sap/opu/odata/sap/API_MATERIAL_DOCUMENT_SRV", "A_MaterialDocumentItem"),
+    ("/sap/opu/odata/sap/API_MATERIAL_DOCUMENT_SRV", "MaterialDocumentItem"),
+    ("/sap/opu/odata/sap/API_MATERIAL_DOCUMENT_SRV", "A_MaterialDocumentHeader"),
+    # Not-yet-registered services
     ("/sap/opu/odata/sap/OGS_MATERIAL_DOCUMENT_SRV", "MaterialDocumentSet"),
     ("/sap/opu/odata/sap/OGS_MATERIAL_DOCUMENT_SRV", "GoodsMovementSet"),
-    ("/sap/opu/odata/sap/OGS_MATERIAL_DOCUMENT_SRV", "MatDocumentSet"),
     ("/sap/opu/odata/sap/ZMMIM_GOODS_MOVEMENT_SRV", "GoodsMovementSet"),
     ("/sap/opu/odata/sap/MMIM_GOODS_MOVEMENT_SRV", "GoodsMovementSet"),
-    ("/sap/opu/odata/sap/API_MATERIAL_DOCUMENT_SRV", "MaterialDocumentItem"),
 ]
 
 # CDS service for manufacturing/process order scrap (feeds BOOK domain)
@@ -516,11 +524,13 @@ async def _discover_s4_services(filter_term: str = "") -> str:
                 continue
             result.append({"TechnicalServiceName": name, "Title": title, "Namespace": namespace})
 
-        # Also probe metadata for known 403 services to get entity set names
+        # Also probe metadata for registered services to get exact entity set names
         metadata_hints = []
-        for svc_path in ["/sap/opu/odata/sap/OGS_MATERIAL_STOCK_SRV",
-                         "/sap/opu/odata/sap/OGS_MATERIAL_DOCUMENT_SRV",
-                         "/sap/opu/odata/sap/ZC_STOCKQUANTITYVALUEBYTYPE_CDS"]:
+        for svc_path in ["/sap/opu/odata/sap/API_MATERIAL_STOCK_SRV",
+                         "/sap/opu/odata/sap/API_MATERIAL_DOCUMENT_SRV",
+                         "/sap/opu/odata/sap/C_STOCKQUANTITYVALUEBYTYPE_CDS",
+                         "/sap/opu/odata/sap/OGS_MATERIAL_STOCK_SRV",
+                         "/sap/opu/odata/sap/OGS_MATERIAL_DOCUMENT_SRV"]:
             if filter_term and filter_term.lower() not in svc_path.lower():
                 continue
             try:
