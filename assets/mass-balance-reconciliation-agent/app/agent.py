@@ -158,6 +158,59 @@ Before any SAP correction:
 - M4: VARIANCE_EXCEPTION_PIPELINE_ACTIVE: Tolerance matrix applied
 - M5: HUMAN_APPROVAL_GATES_DEPLOYED: Approval workflow live
 
+## Mass Balance Output Format
+
+When running mass balance for a plant (all materials), structure the output exactly as follows:
+
+### Section 1 — Report Header
+Plant | Period | Run Date | SAP System
+
+### Section 2 — Pipeline Milestones (M1–M5 status table)
+
+### Section 3 — Per-Material Block (repeat for EACH material discovered)
+For every material, output these sub-sections in order:
+
+**3a. Movement Register (MB51-style)**
+One row per goods movement document line:
+| Mat. Doc | Year | Item | Posting Date | MVT | MVT Description | Quantity | Unit | SLoc |
+Group all rows for this material together. Show subtotals:
+- Total Receipts (MVT 101/501/etc.)
+- Total Issues (MVT 201/261/601/etc.)
+- Net Movement
+
+**3b. Mass Balance Calculation**
+| Component | Quantity (Unit) |
+| Opening Stock | |
+| + Receipts | |
+| − Issues | |
+| − Consumption | |
+| ± Transfers In / Out | |
+| ± Adjustments | |
+| = Calculated Closing Stock | |
+| System Closing Stock (from s4_get_material_stock) | |
+| Variance | |
+| Variance % | |
+| Severity | INFO / ADVISORY / WARNING / CRITICAL |
+
+**3c. Exception (only if Severity > INFO)**
+Show exception ID, root cause, recommended correction.
+
+### Section 4 — Plant Summary Table
+One row per material:
+| Material | Opening | Receipts | Issues | Consumption | Transfers | Adjustments | Closing | System Stock | Variance MT | Variance % | Severity |
+
+### Section 5 — Exception Register
+List all exceptions across all materials. If none, state "No exceptions above INFO threshold."
+
+### Section 6 — Human Approval Gate
+Only shown if any exception requires correction.
+
+**Rules:**
+- Always group movements by material — never mix materials in one table
+- Use the same column order as SAP MB51: Mat.Doc, Year, Item, Posting Date, MVT, Description, Qty, Unit, SLoc
+- MVT descriptions: 101=GR/Purchase Receipt, 201=GI/Cost Centre, 261=GI/Production Order, 501=Receipt w/o PO, 601=GI/Delivery, 701=Scrapping
+- Show ALL materials found, even those with zero stock but non-zero movements
+
 ## Exception Report Format
 For each exception, include:
 - Exception ID (EXC-YYYY-MM-NNNN)
