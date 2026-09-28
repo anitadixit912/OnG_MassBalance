@@ -154,7 +154,7 @@ async def _load_s4_config() -> dict:
     return cfg
 
 
-async def _s4_get(path: str, params: dict | None = None) -> dict:
+async def _s4_get(path: str, params: dict | None = None, accept: str = "application/json") -> dict:
     """GET an OData resource from S/4HANA via the CF Connectivity proxy."""
     cfg = await _load_s4_config()
 
@@ -167,7 +167,7 @@ async def _s4_get(path: str, params: dict | None = None) -> dict:
         "Authorization": cfg["s4_auth"],
         "sap-client": cfg["sap_client"],
         "SAP-Connectivity-SCC-Location_ID": cfg["scc_location"],
-        "Accept": "application/json",
+        "Accept": accept,
     }
 
     # Include sap-client as URL param — some on-prem ICM configs strip headers
@@ -527,8 +527,7 @@ async def _discover_s4_services(filter_term: str = "") -> str:
             if filter_term and filter_term.lower() not in svc_path.lower():
                 continue
             try:
-                meta = await _s4_get(f"{svc_path}/$metadata", params={})
-                # Extract EntitySet names from raw EDMX XML
+                meta = await _s4_get(f"{svc_path}/$metadata", params={}, accept="application/xml")
                 import re
                 entity_sets = re.findall(r'EntitySet[^>]+Name="([^"]+)"', meta if isinstance(meta, str) else "")
                 metadata_hints.append({"service": svc_path, "entity_sets": entity_sets})
