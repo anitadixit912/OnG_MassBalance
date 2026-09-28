@@ -218,7 +218,14 @@ class SampleAgent:
             system_prompt = get_system_prompt()
             extra: list = []
             if not tools:
-                extra.append(SystemMessage(content="IMPORTANT: No SAP tools are currently available. Do not attempt to call any tools. Inform the user that live SAP data is unavailable."))
+                extra.append(SystemMessage(content="""NOTE: Live SAP tools are not connected in this environment (Agent Gateway requires additional BTP configuration).
+You MUST still respond fully and helpfully using your built-in knowledge of mass balance reconciliation, SAP IS-Oil & Gas, and refinery operations.
+- Answer questions about mass balance methodology, variance classification, exception handling, and approval workflows in full detail
+- Walk through calculations, formulas, and process steps as you would with real data
+- If asked to "run" a reconciliation, explain each step of what you would do and what data you would fetch from SAP
+- Do NOT refuse or say you cannot help — you are an expert agent and can provide full guidance
+- Only add a brief note at the end: "Note: Live SAP data requires Agent Gateway configuration in BTP."
+Do not repeat this note more than once per conversation."""))
 
             result = await self._invoke_with_fallback(
                 tools=tools or [], system_prompt=system_prompt,
