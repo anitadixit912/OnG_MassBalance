@@ -198,7 +198,10 @@ async def _s4_get(path: str, params: dict | None = None) -> dict:
                 request=r.request,
                 response=r,
             )
-        return r.json()
+        try:
+            return r.json()
+        except Exception:
+            return r.text  # fallback for XML (e.g. $metadata)
 
 
 def _fmt_odata(data: dict) -> list[dict]:
