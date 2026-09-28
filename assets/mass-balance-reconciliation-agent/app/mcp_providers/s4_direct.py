@@ -297,18 +297,23 @@ async def _get_material_documents(plant: str, material: str, date_from: str, dat
     """
     dt_from = f"datetime'{date_from}T00:00:00'"
     dt_to = f"datetime'{date_to}T23:59:59'"
-    year = date_from[:4]  # e.g. "2026"
+    from_year = date_from[:4]
+    to_year = date_to[:4]
 
     tried: list[str] = []
 
     # --- Primary: header-level PostingDate filter + expand items ---
     _HDR = "/sap/opu/odata/sap/API_MATERIAL_DOCUMENT_SRV/A_MaterialDocumentHeader"
     tried.append(_HDR)
-    header_filters = [
-        f"MaterialDocumentYear eq '{year}'",
+    if from_year == to_year:
+        year_filter = [f"MaterialDocumentYear eq '{from_year}'"]
+    else:
+        year_filter = [f"MaterialDocumentYear ge '{from_year}'", f"MaterialDocumentYear le '{to_year}'"]
+    header_filters = year_filter + [
         f"PostingDate ge {dt_from}",
         f"PostingDate le {dt_to}",
     ]
+    top = "1000" if from_year != to_year else "500"
     try:
         data = await _s4_get(
             _HDR,
@@ -316,7 +321,7 @@ async def _get_material_documents(plant: str, material: str, date_from: str, dat
                 "$filter": " and ".join(header_filters),
                 "$expand": "to_MaterialDocumentItem",
                 "$format": "json",
-                "$top": "500",
+                "$top": top,
             },
         )
         headers_list = _fmt_odata(data)
@@ -692,16 +697,21 @@ async def _get_plant_movements(plant: str, date_from: str, date_to: str) -> str:
     """
     dt_from = f"datetime'{date_from}T00:00:00'"
     dt_to = f"datetime'{date_to}T23:59:59'"
-    year = date_from[:4]
+    from_year = date_from[:4]
+    to_year = date_to[:4]
 
     tried: list[str] = []
     _HDR = "/sap/opu/odata/sap/API_MATERIAL_DOCUMENT_SRV/A_MaterialDocumentHeader"
     tried.append(_HDR)
-    header_filters = [
-        f"MaterialDocumentYear eq '{year}'",
+    if from_year == to_year:
+        year_filter = [f"MaterialDocumentYear eq '{from_year}'"]
+    else:
+        year_filter = [f"MaterialDocumentYear ge '{from_year}'", f"MaterialDocumentYear le '{to_year}'"]
+    header_filters = year_filter + [
         f"PostingDate ge {dt_from}",
         f"PostingDate le {dt_to}",
     ]
+    top = "1000" if from_year != to_year else "500"
     try:
         data = await _s4_get(
             _HDR,
@@ -709,7 +719,7 @@ async def _get_plant_movements(plant: str, date_from: str, date_to: str) -> str:
                 "$filter": " and ".join(header_filters),
                 "$expand": "to_MaterialDocumentItem",
                 "$format": "json",
-                "$top": "500",
+                "$top": top,
             },
         )
         headers_list = _fmt_odata(data)
@@ -718,7 +728,7 @@ async def _get_plant_movements(plant: str, date_from: str, date_to: str) -> str:
             hdr_plant = hdr.get("Plant", "")
             posting_date = hdr.get("PostingDate", "")
             mat_doc = hdr.get("MaterialDocument", "")
-            mat_doc_year = hdr.get("MaterialDocumentYear", year)
+            mat_doc_year = hdr.get("MaterialDocumentYear", from_year)
             items_raw = hdr.get("to_MaterialDocumentItem", {})
             if isinstance(items_raw, dict):
                 items = items_raw.get("results", items_raw.get("value", []))
