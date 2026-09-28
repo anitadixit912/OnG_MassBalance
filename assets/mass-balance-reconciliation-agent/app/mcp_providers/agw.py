@@ -89,11 +89,40 @@ def _get_tenant_subdomain() -> str | None:
     return os.environ.get("TENANT_SUBDOMAIN")
 
 
+def _configure_sdk_destination_from_vcap() -> None:
+    """Bridge CF VCAP_SERVICES destination binding → SAP Cloud SDK env vars.
+
+    The SAP Cloud SDK expects CLOUD_SDK_CFG_DESTINATION_DEFAULT_* env vars
+    (or Kubernetes-style mounts) which CF doesn't provide. This translates
+    the VCAP_SERVICES 'destination' binding once at startup.
+    """
+    prefix = "CLOUD_SDK_CFG_DESTINATION_DEFAULT"
+    if os.environ.get(f"{prefix}_CLIENTID"):
+        return  # already configured
+    vcap_raw = os.environ.get("VCAP_SERVICES", "{}")
+    try:
+        services = json.loads(vcap_raw)
+        for svc in services.get("destination", []):
+            creds = svc.get("credentials", {})
+            if not (creds.get("clientid") and creds.get("uri")):
+                continue
+            os.environ[f"{prefix}_CLIENTID"] = creds["clientid"]
+            os.environ[f"{prefix}_CLIENTSECRET"] = creds.get("clientsecret", "")
+            os.environ[f"{prefix}_URL"] = creds.get("url", "")
+            os.environ[f"{prefix}_URI"] = creds.get("uri", "")
+            os.environ[f"{prefix}_IDENTITYZONE"] = creds.get("identityzone", "")
+            logger.info("SAP Cloud SDK Destination binding configured from VCAP_SERVICES")
+            return
+    except Exception as e:
+        logger.warning("Failed to bridge VCAP_SERVICES to SAP Cloud SDK env vars: %s", e)
+
+
 async def get_mcp_tools() -> list[BaseTool]:
     if os.environ.get("IBD_TESTING") == "1":
         return _build_mock_tools()
 
     tenant_subdomain = _get_tenant_subdomain()
+    _configure_sdk_destination_from_vcap()
     agw_client = create_client(tenant_subdomain=tenant_subdomain)
     logger.info("AGW client created with tenant_subdomain=%s", tenant_subdomain)
 
