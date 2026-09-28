@@ -288,28 +288,98 @@ class MaterialDocumentsInput(BaseModel):
 
 
 async def _get_material_documents(plant: str, material: str, date_from: str, date_to: str, movement_type: str = "") -> str:
-    """Fetch goods movement material documents from SAP (tries multiple OData service paths)."""
+    """Fetch goods movement material documents from SAP.
+
+    PostingDate lives on A_MaterialDocumentHeader, NOT on A_MaterialDocumentItem.
+    Filtering PostingDate on the item entity returns HTTP 400. We instead query the
+    header with PostingDate + year filter and expand to_MaterialDocumentItem, then
+    apply plant/material/movement_type filters client-side on the items.
+    """
     dt_from = f"datetime'{date_from}T00:00:00'"
     dt_to = f"datetime'{date_to}T23:59:59'"
+    year = date_from[:4]  # e.g. "2026"
 
-    filters = [
-        f"Plant eq '{plant}'",
-        f"Material eq '{material}'",
+    tried: list[str] = []
+
+    # --- Primary: header-level PostingDate filter + expand items ---
+    _HDR = "/sap/opu/odata/sap/API_MATERIAL_DOCUMENT_SRV/A_MaterialDocumentHeader"
+    tried.append(_HDR)
+    header_filters = [
+        f"MaterialDocumentYear eq '{year}'",
         f"PostingDate ge {dt_from}",
         f"PostingDate le {dt_to}",
     ]
-    if movement_type:
-        filters.append(f"GoodsMovementType eq '{movement_type}'")
+    try:
+        data = await _s4_get(
+            _HDR,
+            params={
+                "$filter": " and ".join(header_filters),
+                "$expand": "to_MaterialDocumentItem",
+                "$format": "json",
+                "$top": "500",
+            },
+        )
+        headers_list = _fmt_odata(data)
+        result = []
+        for hdr in headers_list:
+            hdr_plant = hdr.get("Plant", "")
+            posting_date = hdr.get("PostingDate", "")
+            mat_doc = hdr.get("MaterialDocument", "")
+            mat_doc_year = hdr.get("MaterialDocumentYear", year)
+            items_raw = hdr.get("to_MaterialDocumentItem", {})
+            if isinstance(items_raw, dict):
+                items = items_raw.get("results", items_raw.get("value", []))
+            elif isinstance(items_raw, list):
+                items = items_raw
+            else:
+                items = []
+            for itm in items:
+                itm_plant = itm.get("Plant", hdr_plant)
+                if plant and itm_plant and itm_plant != plant:
+                    continue
+                itm_material = itm.get("Material", "")
+                if material and itm_material:
+                    norm_itm = itm_material.lstrip("0")
+                    norm_req = material.lstrip("0")
+                    if norm_itm != norm_req and itm_material != material:
+                        continue
+                mvt = itm.get("GoodsMovementType", itm.get("Bwart", ""))
+                if movement_type and mvt != movement_type:
+                    continue
+                result.append({
+                    "MaterialDocument": mat_doc,
+                    "MaterialDocumentYear": mat_doc_year,
+                    "Item": itm.get("MaterialDocumentItem", ""),
+                    "PostingDate": posting_date,
+                    "Material": itm_material,
+                    "GoodsMovementType": mvt,
+                    "Quantity": itm.get("QuantityInBaseUnit", itm.get("Quantity", itm.get("Menge", "0"))),
+                    "Unit": itm.get("BaseUnit", itm.get("Meins", "")),
+                    "Plant": itm_plant,
+                    "StorageLocation": itm.get("StorageLocation", itm.get("Lgort", "")),
+                })
+        return json.dumps({"status": "ok", "service": _HDR, "records": result, "count": len(result)})
 
-    tried: list[str] = []
+    except httpx.HTTPStatusError as e:
+        body_preview = e.response.text[:300]
+        logger.warning("Header movement query → HTTP %s: %s", e.response.status_code, body_preview)
+        if e.response.status_code not in (403, 404, 400):
+            return json.dumps({"status": "error", "service": _HDR, "code": e.response.status_code, "message": str(e)})
+    except Exception as e:
+        logger.warning("Header movement query exception: %s", e)
+
+    # --- Fallback: item entity without PostingDate (plant + material filter only) ---
     for svc_path, entity in _MOVEMENT_PATHS:
         path_desc = f"{svc_path}/{entity}"
         tried.append(path_desc)
+        item_filters = [f"Plant eq '{plant}'", f"Material eq '{material}'"]
+        if movement_type:
+            item_filters.append(f"GoodsMovementType eq '{movement_type}'")
         try:
             data = await _s4_get(
                 f"{svc_path}/{entity}",
                 params={
-                    "$filter": " and ".join(filters),
+                    "$filter": " and ".join(item_filters),
                     "$format": "json",
                     "$top": "200",
                 },
@@ -327,7 +397,8 @@ async def _get_material_documents(plant: str, material: str, date_from: str, dat
                     "Plant": r.get("Plant", r.get("Werks", "")),
                     "StorageLocation": r.get("StorageLocation", r.get("Lgort", "")),
                 })
-            return json.dumps({"status": "ok", "service": path_desc, "records": result, "count": len(result)})
+            logger.warning("Fallback movement query used — PostingDate filtering skipped for %s/%s", svc_path, entity)
+            return json.dumps({"status": "ok", "service": path_desc, "warning": "date_filter_skipped", "records": result, "count": len(result)})
 
         except httpx.HTTPStatusError as e:
             if e.response.status_code in (403, 404):
