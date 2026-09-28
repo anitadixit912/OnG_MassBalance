@@ -485,7 +485,7 @@ async def _discover_s4_services(filter_term: str = "") -> str:
     try:
         data = await _s4_get(
             "/sap/opu/odata/IWFND/CATALOGSERVICE;v=2/ServiceCollection",
-            params={"$format": "json", "$top": "100"},
+            params={"$format": "json", "$top": "500"},
         )
         services = _fmt_odata(data)
         result = []
