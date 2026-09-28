@@ -684,52 +684,73 @@ class PlantMovementsInput(BaseModel):
 
 
 async def _get_plant_movements(plant: str, date_from: str, date_to: str) -> str:
-    """Fetch ALL goods movements for a plant over a date range — tries multiple OData service paths."""
+    """Fetch ALL goods movements for a plant over a date range.
+
+    PostingDate is on A_MaterialDocumentHeader, not A_MaterialDocumentItem.
+    Query the header with PostingDate filter + $expand=to_MaterialDocumentItem
+    and filter items by plant client-side.
+    """
     dt_from = f"datetime'{date_from}T00:00:00'"
     dt_to = f"datetime'{date_to}T23:59:59'"
-    filters = [
-        f"Plant eq '{plant}'",
+    year = date_from[:4]
+
+    tried: list[str] = []
+    _HDR = "/sap/opu/odata/sap/API_MATERIAL_DOCUMENT_SRV/A_MaterialDocumentHeader"
+    tried.append(_HDR)
+    header_filters = [
+        f"MaterialDocumentYear eq '{year}'",
         f"PostingDate ge {dt_from}",
         f"PostingDate le {dt_to}",
     ]
-    tried: list[str] = []
-    for svc_path, entity in _MOVEMENT_PATHS:
-        path_desc = f"{svc_path}/{entity}"
-        tried.append(path_desc)
-        try:
-            data = await _s4_get(
-                f"{svc_path}/{entity}",
-                params={
-                    "$filter": " and ".join(filters),
-                    "$format": "json",
-                    "$top": "500",
-                },
-            )
-            rows = _fmt_odata(data)
-            result = []
-            for r in rows:
+    try:
+        data = await _s4_get(
+            _HDR,
+            params={
+                "$filter": " and ".join(header_filters),
+                "$expand": "to_MaterialDocumentItem",
+                "$format": "json",
+                "$top": "500",
+            },
+        )
+        headers_list = _fmt_odata(data)
+        result = []
+        for hdr in headers_list:
+            hdr_plant = hdr.get("Plant", "")
+            posting_date = hdr.get("PostingDate", "")
+            mat_doc = hdr.get("MaterialDocument", "")
+            mat_doc_year = hdr.get("MaterialDocumentYear", year)
+            items_raw = hdr.get("to_MaterialDocumentItem", {})
+            if isinstance(items_raw, dict):
+                items = items_raw.get("results", items_raw.get("value", []))
+            elif isinstance(items_raw, list):
+                items = items_raw
+            else:
+                items = []
+            for itm in items:
+                itm_plant = itm.get("Plant", hdr_plant)
+                if plant and itm_plant and itm_plant != plant:
+                    continue
                 result.append({
-                    "MaterialDocument": r.get("MaterialDocument", r.get("Mblnr", "")),
-                    "Item": r.get("MaterialDocumentItem", r.get("Zeile", "")),
-                    "PostingDate": r.get("PostingDate", r.get("Budat", "")),
-                    "Material": r.get("Material", r.get("Matnr", "")),
-                    "GoodsMovementType": r.get("GoodsMovementType", r.get("Bwart", "")),
-                    "Quantity": r.get("QuantityInBaseUnit", r.get("Menge", "0")),
-                    "Unit": r.get("BaseUnit", r.get("Meins", "")),
-                    "StorageLocation": r.get("StorageLocation", r.get("Lgort", "")),
+                    "MaterialDocument": mat_doc,
+                    "MaterialDocumentYear": mat_doc_year,
+                    "Item": itm.get("MaterialDocumentItem", ""),
+                    "PostingDate": posting_date,
+                    "Material": itm.get("Material", itm.get("Matnr", "")),
+                    "GoodsMovementType": itm.get("GoodsMovementType", itm.get("Bwart", "")),
+                    "Quantity": itm.get("QuantityInBaseUnit", itm.get("Quantity", itm.get("Menge", "0"))),
+                    "Unit": itm.get("BaseUnit", itm.get("Meins", "")),
+                    "Plant": itm_plant,
+                    "StorageLocation": itm.get("StorageLocation", itm.get("Lgort", "")),
                 })
-            return json.dumps({"status": "ok", "service": path_desc, "plant": plant,
-                               "records": result, "count": len(result)})
+        return json.dumps({"status": "ok", "service": _HDR, "plant": plant,
+                           "records": result, "count": len(result)})
 
-        except httpx.HTTPStatusError as e:
-            if e.response.status_code in (403, 404):
-                logger.info("Service %s returned %s — trying next path", path_desc, e.response.status_code)
-                continue
-            return json.dumps({"status": "error", "service": path_desc, "code": e.response.status_code, "message": str(e)})
-        except Exception as e:
-            return json.dumps({"status": "error", "service": path_desc, "message": str(e)})
-
-    return json.dumps({"status": "error", "message": f"No accessible movement service found. Tried: {tried}"})
+    except httpx.HTTPStatusError as e:
+        body_preview = e.response.text[:300]
+        logger.warning("Plant movements header query → HTTP %s: %s", e.response.status_code, body_preview)
+        return json.dumps({"status": "error", "service": _HDR, "code": e.response.status_code, "message": str(e)})
+    except Exception as e:
+        return json.dumps({"status": "error", "service": _HDR, "message": str(e)})
 
 
 # --------------------------------------------------------------------------- #

@@ -1,6 +1,7 @@
 import logging
 import os
 from dataclasses import dataclass
+from datetime import date
 from typing import Any, AsyncGenerator, Literal, Sequence
 
 from langchain.agents import create_agent
@@ -91,7 +92,9 @@ def get_summarization_model_name() -> str:
     validation={"format": "markdown", "max_length": 5000},
 )
 def get_system_prompt() -> str:
-    base_prompt = """You are the Refinery Mass Balance Reconciliation Agent — an AI orchestrator deployed on SAP BTP for a petroleum refinery.
+    today_iso = date.today().isoformat()          # e.g. "2026-09-28"
+    this_month = date.today().strftime("%Y-%m")   # e.g. "2026-09"
+    base_prompt = f"""You are the Refinery Mass Balance Reconciliation Agent — an AI orchestrator deployed on SAP BTP for a petroleum refinery.
 
 ## Your Mission
 Automate the daily and monthly hydrocarbon mass balance reconciliation cycle by:
@@ -105,8 +108,8 @@ Automate the daily and monthly hydrocarbon mass balance reconciliation cycle by:
 ## Refinery Context (defaults when not specified)
 - Default plant: **1000** (primary refinery plant in this system)
 - SAP system: OGS/650 accessed via OGS_S4 destination
-- When the user says "today", use today's actual date from your knowledge context
-- When the user says "this month", use the current calendar month
+- **Today's date is {today_iso}** — always use this exact date when the user says "today"
+- **This month is {this_month}** — always use this when the user says "this month"
 - When plant is not specified, default to **plant 1000**
 - When material is not specified, call `s4_get_plant_stock` to discover all materials automatically — NEVER ask the user for material numbers
 
