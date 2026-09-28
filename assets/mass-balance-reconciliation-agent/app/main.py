@@ -10,7 +10,7 @@ from a2a.server.tasks import InMemoryTaskStore
 from a2a.types import AgentCapabilities, AgentCard, AgentSkill
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
-from starlette.responses import HTMLResponse, JSONResponse
+from starlette.responses import HTMLResponse, JSONResponse, RedirectResponse
 from starlette.routing import Route
 
 from agent_executor import AgentExecutor
@@ -231,6 +231,10 @@ async def chat_ui(request: Request):
     return HTMLResponse(_CHAT_HTML)
 
 
+async def root_redirect(request: Request):
+    return RedirectResponse(url="/ui", status_code=302)
+
+
 @click.command()
 @click.option("--host", default=HOST)
 @click.option("--port", default=PORT)
@@ -264,9 +268,10 @@ def main(host: str, port: int):
     )
     app = server.build()
 
-    # Mount the chat UI at GET /ui
+    # Mount the chat UI at GET /ui; redirect bare GET / to /ui
     from starlette.routing import Mount
     app.routes.insert(0, Route("/ui", endpoint=chat_ui, methods=["GET"]))
+    app.routes.insert(0, Route("/", endpoint=root_redirect, methods=["GET"]))
 
     class JWTContextMiddleware(BaseHTTPMiddleware):
         async def dispatch(self, request, call_next):
