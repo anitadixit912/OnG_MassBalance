@@ -68,7 +68,7 @@ _CHAT_HTML = """<!DOCTYPE html>
 </header>
 
 <!-- Token panel — hidden once token is set -->
-<div class="token-panel" id="token-panel">
+<div class="token-panel hidden" id="token-panel">
   <strong>One-time setup:</strong>
   Run <code>cf oauth-token</code> in a terminal, paste below, click Save.
   Token is stored in your browser and lasts ~10 hours.
@@ -106,11 +106,9 @@ Click a sample question above or type your own below.</div>
     if (t) {
       document.getElementById('token-status').textContent = '\\u2705 Token set';
       document.getElementById('token-status').className = 'ok';
-      document.getElementById('token-panel').className = 'token-panel hidden';
     } else {
-      document.getElementById('token-status').textContent = '\\u{1F512} No token';
+      document.getElementById('token-status').textContent = '\\u{1F512}';
       document.getElementById('token-status').className = 'missing';
-      document.getElementById('token-panel').className = 'token-panel';
     }
     return t;
   }
