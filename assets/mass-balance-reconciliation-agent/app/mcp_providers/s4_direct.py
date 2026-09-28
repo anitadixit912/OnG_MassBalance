@@ -262,8 +262,9 @@ async def _get_material_stock(plant: str, material: str, storage_location: str =
 
         except httpx.HTTPStatusError as e:
             if e.response.status_code in (403, 404):
-                logger.info("Service %s returned %s — trying next path", path_desc, e.response.status_code)
-                tried.append(f"{path_desc} [HTTP {e.response.status_code}]")
+                body_preview = e.response.text[:300]
+                logger.warning("Service %s → HTTP %s: %s", path_desc, e.response.status_code, body_preview)
+                tried.append(f"{path_desc} [HTTP {e.response.status_code}: {body_preview[:150]}]")
                 continue
             return json.dumps({"status": "error", "service": path_desc, "code": e.response.status_code, "message": str(e)})
         except Exception as e:
@@ -587,8 +588,9 @@ async def _get_plant_stock(plant: str, min_quantity: float = 0.0) -> str:
 
         except httpx.HTTPStatusError as e:
             if e.response.status_code in (403, 404):
-                logger.info("Service %s returned %s — trying next path", path_desc, e.response.status_code)
-                tried.append(f"{path_desc} [HTTP {e.response.status_code}]")
+                body_preview = e.response.text[:300]
+                logger.warning("Service %s → HTTP %s: %s", path_desc, e.response.status_code, body_preview)
+                tried.append(f"{path_desc} [HTTP {e.response.status_code}: {body_preview[:150]}]")
                 continue
             return json.dumps({"status": "error", "service": path_desc, "code": e.response.status_code, "message": str(e)})
         except Exception as e:
