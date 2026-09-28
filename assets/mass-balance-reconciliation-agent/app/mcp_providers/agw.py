@@ -74,20 +74,56 @@ def _build_mock_tools() -> list[BaseTool]:
     return tools
 
 
+def _get_tenant_subdomain() -> str | None:
+    """Extract tenant subdomain from VCAP_SERVICES (identityzone field)."""
+    vcap_raw = os.environ.get("VCAP_SERVICES", "{}")
+    try:
+        services = json.loads(vcap_raw)
+        for label in ("destination", "connectivity", "xsuaa"):
+            for svc in services.get(label, []):
+                iz = svc.get("credentials", {}).get("identityzone")
+                if iz:
+                    return iz
+    except Exception:
+        pass
+    return os.environ.get("TENANT_SUBDOMAIN")
+
+
 async def get_mcp_tools() -> list[BaseTool]:
     if os.environ.get("IBD_TESTING") == "1":
         return _build_mock_tools()
 
-    agw_client = create_client()
-    mcp_tools = await agw_client.list_mcp_tools(user_token=_get_user_token)
+    tenant_subdomain = _get_tenant_subdomain()
+    agw_client = create_client(tenant_subdomain=tenant_subdomain)
+    logger.info("AGW client created with tenant_subdomain=%s", tenant_subdomain)
+
+    # When a user token is present use user-scoped auth; else fall back to system auth
+    user_token_val = _get_user_token()
+    mcp_tools = await agw_client.list_mcp_tools(
+        user_token=user_token_val if user_token_val else None
+    )
 
     if not mcp_tools:
         logger.warning("Agent Gateway returned 0 tools — MCP servers may not be available")
         return []
 
+    async def _effective_token() -> str | None:
+        """Return user token if present, else a system auth token (no principal propagation)."""
+        token = _get_user_token()
+        if token:
+            return token
+        try:
+            auth = await agw_client.get_system_auth()
+            logger.info("Using system auth token for tool invocation (no user token)")
+            return auth.access_token
+        except Exception as e:
+            logger.warning("System auth fallback failed: %s", e)
+            return None
+
     def _make_caller(t: Any):
         async def call(_tool: Any = None, *, user_token: Any = None, **kwargs: Any) -> str:
-            return await call_mcp_tool_with_retry(agw_client, t, user_token=_get_user_token(), **kwargs)
+            tok = await _effective_token()
+            return await call_mcp_tool_with_retry(agw_client, t, user_token=tok, **kwargs)
         return call
 
     tools = [mcp_tool_to_langchain(t, _make_caller(t), _get_user_token) for t in mcp_tools]
