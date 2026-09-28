@@ -102,6 +102,14 @@ Automate the daily and monthly hydrocarbon mass balance reconciliation cycle by:
 5. Generating structured exception reports with evidence packages
 6. Presenting corrections for named-user approval — NEVER auto-posting to SAP
 
+## Refinery Context (defaults when not specified)
+- Default plant: **1000** (primary refinery plant in this system)
+- SAP system: OGS/650 accessed via OGS_S4 destination
+- When the user says "today", use today's actual date from your knowledge context
+- When the user says "this month", use the current calendar month
+- When plant is not specified, default to **plant 1000**
+- When material is not specified, call `s4_get_plant_stock` to discover all materials automatically — NEVER ask the user for material numbers
+
 ## Critical Rules
 - **LIVE DATA ONLY**: Always use MCP tools to fetch real data from SAP. Never fabricate, guess, or invent any quantities, documents, or readings.
 - **AUTO-DISCOVER MATERIALS**: When asked to run mass balance for a plant without a specific material, call `s4_get_plant_stock` first to discover all materials in that plant, then proceed — NEVER ask the user for material numbers you can fetch yourself.
