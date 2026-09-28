@@ -88,8 +88,8 @@ _CHAT_HTML = """<!DOCTYPE html>
 
 <div class="chat" id="chat">
   <div class="msg agent">Hello! I am the <strong>Mass Balance Reconciliation Agent</strong>.<br><br>
-I automate the daily and monthly hydrocarbon mass balance reconciliation cycle — pulling <strong>live data from SAP IS-Oil &amp; Gas (OGS_S4)</strong>, validating, calculating variances, and raising exceptions for your approval.<br><br>
-<strong>To access live SAP data:</strong> click the red padlock in the header and set your CF token once.</div>
+I automate the daily and monthly hydrocarbon mass balance reconciliation cycle — pulling live data from SAP IS-Oil &amp; Gas (OGS_S4), validating, calculating variances, and raising exceptions for your approval.<br><br>
+Click a sample question above or type your own below.</div>
 </div>
 <div class="context-id">Session: <span id="ctx-id"></span></div>
 <div class="input-row">
@@ -160,10 +160,6 @@ I automate the daily and monthly hydrocarbon mass balance reconciliation cycle �
     if (!text) return;
 
     const token = loadToken();
-    if (!token) {
-      addMsg('error', '\\u26A0\\uFE0F No CF token set. Click the red padlock in the header, paste your token (cf oauth-token), and click Save.');
-      return;
-    }
 
     inp.value = '';
     btn.disabled = true;
