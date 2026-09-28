@@ -21,9 +21,11 @@ logger = logging.getLogger(__name__)
 
 # Ordered (service_path, entity_set) pairs to try for each domain.
 # Both 403 and 404 trigger fallback to the next entry.
-# S/4HANA API Hub names first, then IS-Oil OGS variants.
+# S/4HANA API Hub names first, then IS-Oil OGS variants, then CDS views.
 _STOCK_PATHS = [
     ("/sap/opu/odata/sap/API_MATERIAL_STOCK_SRV", "MatlStkInAcctMod"),
+    ("/sap/opu/odata/sap/C_STOCKQUANTITYVALUEBYTYPE_CDS", "C_StockQuantityValueByType"),
+    ("/sap/opu/odata/sap/C_STOCKQUANTITYVALUEBYTYPE_CDS", "StockQuantityValueByType"),
     ("/sap/opu/odata/sap/OGS_MATERIAL_STOCK_SRV", "MaterialStockSet"),
     ("/sap/opu/odata/sap/OGS_MATERIAL_STOCK_SRV", "StockBalanceSet"),
     ("/sap/opu/odata/sap/OGS_MATERIAL_STOCK_SRV", "MaterialStock"),
@@ -34,6 +36,7 @@ _MOVEMENT_PATHS = [
     ("/sap/opu/odata/sap/OGS_MATERIAL_DOCUMENT_SRV", "MaterialDocumentSet"),
     ("/sap/opu/odata/sap/OGS_MATERIAL_DOCUMENT_SRV", "GoodsMovementSet"),
     ("/sap/opu/odata/sap/MMIM_GOODS_MOVEMENT_SRV", "GoodsMovementSet"),
+    ("/sap/opu/odata/sap/MMIM_GOODS_MOVEMENT_SRV", "MaterialDocumentSet"),
 ]
 
 
@@ -487,11 +490,17 @@ async def _discover_s4_services(filter_term: str = "") -> str:
         services = _fmt_odata(data)
         result = []
         for svc in services:
-            name = svc.get("TechnicalName", svc.get("ServiceName", ""))
-            title = svc.get("Title", "")
+            # CATALOGSERVICE v2 uses TechnicalServiceName (not TechnicalName)
+            name = (svc.get("TechnicalServiceName")
+                    or svc.get("TechnicalName")
+                    or svc.get("ServiceName")
+                    or svc.get("Title")
+                    or "")
+            title = svc.get("Title", svc.get("Description", ""))
+            namespace = svc.get("Namespace", "")
             if filter_term and filter_term.lower() not in name.lower() and filter_term.lower() not in title.lower():
                 continue
-            result.append({"TechnicalName": name, "Title": title})
+            result.append({"TechnicalServiceName": name, "Title": title, "Namespace": namespace})
         return json.dumps({"status": "ok", "services": result[:50], "count": len(result)})
     except Exception as e:
         return json.dumps({"status": "error", "message": str(e)})
