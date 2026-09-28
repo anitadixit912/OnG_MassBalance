@@ -152,9 +152,10 @@ async def _s4_get(path: str, params: dict | None = None) -> dict:
         "Accept": "application/json",
     }
 
+    mounts: dict | None = None
     if cfg.get("conn_token"):
-        # Route through Connectivity Service proxy for OnPremise access
-        proxies = {
+        # Route http:// through Connectivity Service proxy (httpx 0.28+ uses mounts=)
+        mounts = {
             "http://": httpx.Proxy(
                 url=cfg["proxy_url"],
                 headers={"Proxy-Authorization": f"Bearer {cfg['conn_token']}"},
@@ -164,7 +165,11 @@ async def _s4_get(path: str, params: dict | None = None) -> dict:
     url = f"{cfg['s4_url']}{path}"
     logger.info("S4 OData GET %s params=%s", url, params)
 
-    async with httpx.AsyncClient(proxies=proxies, timeout=60) as client:
+    client_kwargs: dict = {"timeout": 60}
+    if mounts:
+        client_kwargs["mounts"] = mounts
+
+    async with httpx.AsyncClient(**client_kwargs) as client:
         r = await client.get(url, headers=request_headers, params=params or {})
         r.raise_for_status()
         return r.json()
