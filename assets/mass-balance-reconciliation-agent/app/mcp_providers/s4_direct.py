@@ -21,34 +21,27 @@ logger = logging.getLogger(__name__)
 
 # Ordered (service_path, entity_set) pairs to try for each domain.
 # Both 403 and 404 trigger fallback to the next entry.
-# API_MATERIAL_STOCK_SRV and C_STOCKQUANTITYVALUEBYTYPE_CDS ARE registered in Gateway
-# (return 404 "segment not found" = service found, entity set name wrong — try all variants).
-# OGS_MATERIAL_STOCK_SRV and ZC_ return 403 "No service found" = not yet in Gateway.
+# Only services confirmed accessible in this OGS/650 system are listed.
+# OGS_MATERIAL_STOCK_SRV / ZC_STOCKQUANTITYVALUEBYTYPE_CDS do NOT exist here.
 _STOCK_PATHS = [
-    # Registered services — try all known entity set name variants (A_ prefix common in S/4HANA APIs)
+    # API_MATERIAL_STOCK_SRV IS registered. Try A_ prefix first (S/4HANA 2021+ naming).
     ("/sap/opu/odata/sap/API_MATERIAL_STOCK_SRV", "A_MatlStkInAcctMod"),
     ("/sap/opu/odata/sap/API_MATERIAL_STOCK_SRV", "MatlStkInAcctMod"),
     ("/sap/opu/odata/sap/API_MATERIAL_STOCK_SRV", "MaterialStock"),
     ("/sap/opu/odata/sap/API_MATERIAL_STOCK_SRV", "A_MaterialStock"),
+    # C_STOCKQUANTITYVALUEBYTYPE_CDS IS registered — try all known entity set names.
     ("/sap/opu/odata/sap/C_STOCKQUANTITYVALUEBYTYPE_CDS", "C_StockQtyValueByType"),
     ("/sap/opu/odata/sap/C_STOCKQUANTITYVALUEBYTYPE_CDS", "C_StockQuantityValueByType"),
     ("/sap/opu/odata/sap/C_STOCKQUANTITYVALUEBYTYPE_CDS", "StockQuantityValueByType"),
-    # Not-yet-registered services (need /IWFND/MAINT_SERVICE activation)
-    ("/sap/opu/odata/sap/OGS_MATERIAL_STOCK_SRV", "MaterialStockSet"),
-    ("/sap/opu/odata/sap/OGS_MATERIAL_STOCK_SRV", "StockBalanceSet"),
-    ("/sap/opu/odata/sap/ZC_STOCKQUANTITYVALUEBYTYPE_CDS", "C_StockQuantityValueByType"),
+    ("/sap/opu/odata/sap/C_STOCKQUANTITYVALUEBYTYPE_CDS", "A_StockQuantityValueByType"),
 ]
 
 _MOVEMENT_PATHS = [
-    # Registered: API_MATERIAL_DOCUMENT_SRV — try A_ prefix variants
+    # API_MATERIAL_DOCUMENT_SRV — likely registered, try A_ prefix variants first.
     ("/sap/opu/odata/sap/API_MATERIAL_DOCUMENT_SRV", "A_MaterialDocumentItem"),
     ("/sap/opu/odata/sap/API_MATERIAL_DOCUMENT_SRV", "MaterialDocumentItem"),
     ("/sap/opu/odata/sap/API_MATERIAL_DOCUMENT_SRV", "A_MaterialDocumentHeader"),
-    # Not-yet-registered services
-    ("/sap/opu/odata/sap/OGS_MATERIAL_DOCUMENT_SRV", "MaterialDocumentSet"),
-    ("/sap/opu/odata/sap/OGS_MATERIAL_DOCUMENT_SRV", "GoodsMovementSet"),
-    ("/sap/opu/odata/sap/ZMMIM_GOODS_MOVEMENT_SRV", "GoodsMovementSet"),
-    ("/sap/opu/odata/sap/MMIM_GOODS_MOVEMENT_SRV", "GoodsMovementSet"),
+    ("/sap/opu/odata/sap/API_MATERIAL_DOCUMENT_SRV", "MaterialDocumentHeader"),
 ]
 
 # CDS service for manufacturing/process order scrap (feeds BOOK domain)
