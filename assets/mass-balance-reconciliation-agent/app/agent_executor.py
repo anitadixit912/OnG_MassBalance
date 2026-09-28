@@ -10,6 +10,7 @@ from a2a.utils.errors import ServerError
 from agent import SampleAgent
 from load_skill_resources import get_load_skill_resource_tool
 from mcp_providers.agw import get_mcp_tools
+from mcp_providers.s4_direct import get_s4_direct_tools
 from prompt_injection_detector import wrap_tool
 
 logger = logging.getLogger(__name__)
@@ -36,6 +37,14 @@ class AgentExecutor(A2AAgentExecutor):
                 logger.info("Loaded %d MCP tool(s): %s", len(tools), [t.name for t in tools])
         except Exception as e:
             logger.error(f"Failed to load tools from Agent Gateway: {e}")
+
+        # Always load direct S/4HANA OData tools — these bypass Agent Gateway
+        try:
+            s4_tools = get_s4_direct_tools()
+            tools = [*tools, *s4_tools]
+            logger.info("Loaded %d direct S/4HANA OData tool(s)", len(s4_tools))
+        except Exception as e:
+            logger.error("Failed to load S4 direct tools: %s", e)
 
         tools = [*tools, *self.skill_tools]
         tools = [wrap_tool(t) for t in tools]

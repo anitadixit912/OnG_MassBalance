@@ -218,14 +218,14 @@ class SampleAgent:
             system_prompt = get_system_prompt()
             extra: list = []
             if not tools:
-                extra.append(SystemMessage(content="""NOTE: Live SAP tools are not connected in this environment (Agent Gateway requires additional BTP configuration).
-You MUST still respond fully and helpfully using your built-in knowledge of mass balance reconciliation, SAP IS-Oil & Gas, and refinery operations.
-- Answer questions about mass balance methodology, variance classification, exception handling, and approval workflows in full detail
-- Walk through calculations, formulas, and process steps as you would with real data
-- If asked to "run" a reconciliation, explain each step of what you would do and what data you would fetch from SAP
-- Do NOT refuse or say you cannot help — you are an expert agent and can provide full guidance
-- Only add a brief note at the end: "Note: Live SAP data requires Agent Gateway configuration in BTP."
-Do not repeat this note more than once per conversation."""))
+                extra.append(SystemMessage(content="""IMPORTANT: No SAP tools are currently available in this environment.
+You MUST NOT fabricate, guess, or invent any material numbers, stock quantities, document numbers, variances, or any other SAP data.
+DO NOT generate illustrative or example data — the user requires REAL data only.
+Instead, inform the user clearly:
+- That the SAP connectivity tools are not yet available in this session
+- What they would need to provide or configure to get live data
+- You may explain methodology, formulas, or classification rules in general terms ONLY if explicitly asked
+Do NOT run any calculations with made-up numbers. Do NOT produce tables with sample data."""))
 
             result = await self._invoke_with_fallback(
                 tools=tools or [], system_prompt=system_prompt,
@@ -233,9 +233,9 @@ Do not repeat this note more than once per conversation."""))
             )
             response = result["messages"][-1].content
             yield {"is_task_complete": True, "require_user_input": False, "content": response}
-        except Exception:
+        except Exception as e:
             logger.exception("Agent stream() failed")
-            yield {"is_task_complete": True, "require_user_input": False, "content": "I encountered an error while processing your request. Please try again."}
+            yield {"is_task_complete": True, "require_user_input": False, "content": f"Error: {type(e).__name__}: {str(e)}"}
 
     async def invoke(self, query: str, context_id: str, tools: Sequence[BaseTool] | None = None) -> AgentResponse:
         last: dict = {}
