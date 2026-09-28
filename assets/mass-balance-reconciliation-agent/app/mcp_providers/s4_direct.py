@@ -21,26 +21,26 @@ logger = logging.getLogger(__name__)
 
 # Ordered (service_path, entity_set) pairs to try for each domain.
 # Both 403 and 404 trigger fallback to the next entry.
-# S/4HANA API Hub names first, then CDS views (plain + Z-prefix), then IS-Oil OGS variants.
-# Z-prefix: SAP IWFND catalog registers services with a Z prefix in TechnicalServiceName
-# while the actual ICF URL uses the name without Z. Both variants are tried.
+# Order: confirmed-403 (service exists, just needs auth) first, then 404 fallbacks.
+# ZC_ prefix = actual registered URL in this OGS/650 system.
 _STOCK_PATHS = [
-    ("/sap/opu/odata/sap/API_MATERIAL_STOCK_SRV", "MatlStkInAcctMod"),
-    ("/sap/opu/odata/sap/C_STOCKQUANTITYVALUEBYTYPE_CDS", "C_StockQuantityValueByType"),
-    ("/sap/opu/odata/sap/C_STOCKQUANTITYVALUEBYTYPE_CDS", "StockQuantityValueByType"),
-    ("/sap/opu/odata/sap/ZC_STOCKQUANTITYVALUEBYTYPE_CDS", "C_StockQuantityValueByType"),
     ("/sap/opu/odata/sap/OGS_MATERIAL_STOCK_SRV", "MaterialStockSet"),
     ("/sap/opu/odata/sap/OGS_MATERIAL_STOCK_SRV", "StockBalanceSet"),
     ("/sap/opu/odata/sap/OGS_MATERIAL_STOCK_SRV", "MaterialStock"),
+    ("/sap/opu/odata/sap/OGS_MATERIAL_STOCK_SRV", "InventoryStockSet"),
+    ("/sap/opu/odata/sap/ZC_STOCKQUANTITYVALUEBYTYPE_CDS", "C_StockQuantityValueByType"),
+    ("/sap/opu/odata/sap/ZC_STOCKQUANTITYVALUEBYTYPE_CDS", "StockQuantityValueByType"),
+    ("/sap/opu/odata/sap/API_MATERIAL_STOCK_SRV", "MatlStkInAcctMod"),
+    ("/sap/opu/odata/sap/C_STOCKQUANTITYVALUEBYTYPE_CDS", "C_StockQuantityValueByType"),
 ]
 
 _MOVEMENT_PATHS = [
-    ("/sap/opu/odata/sap/API_MATERIAL_DOCUMENT_SRV", "MaterialDocumentItem"),
-    ("/sap/opu/odata/sap/MMIM_GOODS_MOVEMENT_SRV", "GoodsMovementSet"),
-    ("/sap/opu/odata/sap/MMIM_GOODS_MOVEMENT_SRV", "MaterialDocumentSet"),
-    ("/sap/opu/odata/sap/ZMMIM_GOODS_MOVEMENT_SRV", "GoodsMovementSet"),
     ("/sap/opu/odata/sap/OGS_MATERIAL_DOCUMENT_SRV", "MaterialDocumentSet"),
     ("/sap/opu/odata/sap/OGS_MATERIAL_DOCUMENT_SRV", "GoodsMovementSet"),
+    ("/sap/opu/odata/sap/OGS_MATERIAL_DOCUMENT_SRV", "MatDocumentSet"),
+    ("/sap/opu/odata/sap/ZMMIM_GOODS_MOVEMENT_SRV", "GoodsMovementSet"),
+    ("/sap/opu/odata/sap/MMIM_GOODS_MOVEMENT_SRV", "GoodsMovementSet"),
+    ("/sap/opu/odata/sap/API_MATERIAL_DOCUMENT_SRV", "MaterialDocumentItem"),
 ]
 
 # CDS service for manufacturing/process order scrap (feeds BOOK domain)
@@ -490,8 +490,9 @@ class ServiceCatalogInput(BaseModel):
 
 
 async def _discover_s4_services(filter_term: str = "") -> str:
-    """Query the SAP OData service catalog to discover available services."""
+    """Query the SAP OData service catalog and metadata to discover available services and their entity sets."""
     try:
+        # First get catalog services
         data = await _s4_get(
             "/sap/opu/odata/IWFND/CATALOGSERVICE;v=2/ServiceCollection",
             params={"$format": "json", "$top": "500"},
@@ -510,7 +511,25 @@ async def _discover_s4_services(filter_term: str = "") -> str:
             if filter_term and filter_term.lower() not in name.lower() and filter_term.lower() not in title.lower():
                 continue
             result.append({"TechnicalServiceName": name, "Title": title, "Namespace": namespace})
-        return json.dumps({"status": "ok", "services": result[:50], "count": len(result)})
+
+        # Also probe metadata for known 403 services to get entity set names
+        metadata_hints = []
+        for svc_path in ["/sap/opu/odata/sap/OGS_MATERIAL_STOCK_SRV",
+                         "/sap/opu/odata/sap/OGS_MATERIAL_DOCUMENT_SRV",
+                         "/sap/opu/odata/sap/ZC_STOCKQUANTITYVALUEBYTYPE_CDS"]:
+            if filter_term and filter_term.lower() not in svc_path.lower():
+                continue
+            try:
+                meta = await _s4_get(f"{svc_path}/$metadata", params={})
+                # Extract EntitySet names from raw EDMX XML
+                import re
+                entity_sets = re.findall(r'EntitySet[^>]+Name="([^"]+)"', meta if isinstance(meta, str) else "")
+                metadata_hints.append({"service": svc_path, "entity_sets": entity_sets})
+            except Exception as me:
+                metadata_hints.append({"service": svc_path, "metadata_error": str(me)[:100]})
+
+        return json.dumps({"status": "ok", "services": result[:50], "count": len(result),
+                           "metadata_hints": metadata_hints})
     except Exception as e:
         return json.dumps({"status": "error", "message": str(e)})
 
