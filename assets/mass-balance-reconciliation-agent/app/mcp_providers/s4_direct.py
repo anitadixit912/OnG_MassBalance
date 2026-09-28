@@ -21,11 +21,14 @@ logger = logging.getLogger(__name__)
 
 # Ordered (service_path, entity_set) pairs to try for each domain.
 # Both 403 and 404 trigger fallback to the next entry.
-# S/4HANA API Hub names first, then IS-Oil OGS variants, then CDS views.
+# S/4HANA API Hub names first, then CDS views (plain + Z-prefix), then IS-Oil OGS variants.
+# Z-prefix: SAP IWFND catalog registers services with a Z prefix in TechnicalServiceName
+# while the actual ICF URL uses the name without Z. Both variants are tried.
 _STOCK_PATHS = [
     ("/sap/opu/odata/sap/API_MATERIAL_STOCK_SRV", "MatlStkInAcctMod"),
     ("/sap/opu/odata/sap/C_STOCKQUANTITYVALUEBYTYPE_CDS", "C_StockQuantityValueByType"),
     ("/sap/opu/odata/sap/C_STOCKQUANTITYVALUEBYTYPE_CDS", "StockQuantityValueByType"),
+    ("/sap/opu/odata/sap/ZC_STOCKQUANTITYVALUEBYTYPE_CDS", "C_StockQuantityValueByType"),
     ("/sap/opu/odata/sap/OGS_MATERIAL_STOCK_SRV", "MaterialStockSet"),
     ("/sap/opu/odata/sap/OGS_MATERIAL_STOCK_SRV", "StockBalanceSet"),
     ("/sap/opu/odata/sap/OGS_MATERIAL_STOCK_SRV", "MaterialStock"),
@@ -33,11 +36,15 @@ _STOCK_PATHS = [
 
 _MOVEMENT_PATHS = [
     ("/sap/opu/odata/sap/API_MATERIAL_DOCUMENT_SRV", "MaterialDocumentItem"),
-    ("/sap/opu/odata/sap/OGS_MATERIAL_DOCUMENT_SRV", "MaterialDocumentSet"),
-    ("/sap/opu/odata/sap/OGS_MATERIAL_DOCUMENT_SRV", "GoodsMovementSet"),
     ("/sap/opu/odata/sap/MMIM_GOODS_MOVEMENT_SRV", "GoodsMovementSet"),
     ("/sap/opu/odata/sap/MMIM_GOODS_MOVEMENT_SRV", "MaterialDocumentSet"),
+    ("/sap/opu/odata/sap/ZMMIM_GOODS_MOVEMENT_SRV", "GoodsMovementSet"),
+    ("/sap/opu/odata/sap/OGS_MATERIAL_DOCUMENT_SRV", "MaterialDocumentSet"),
+    ("/sap/opu/odata/sap/OGS_MATERIAL_DOCUMENT_SRV", "GoodsMovementSet"),
 ]
+
+# CDS service for manufacturing/process order scrap (feeds BOOK domain)
+_SCRAP_PATH = ("/sap/opu/odata/sap/C_MFGORDITEMMATERIALSCRAPQ_CDS", "C_MfgOrdItemMaterialScrapQ")
 
 
 # --------------------------------------------------------------------------- #
