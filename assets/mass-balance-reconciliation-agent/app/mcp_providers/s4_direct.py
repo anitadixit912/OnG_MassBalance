@@ -154,13 +154,12 @@ async def _s4_get(path: str, params: dict | None = None) -> dict:
 
     mounts: dict | None = None
     if cfg.get("conn_token"):
-        # Route http:// through Connectivity Service proxy (httpx 0.28+ uses mounts=)
-        mounts = {
-            "http://": httpx.Proxy(
-                url=cfg["proxy_url"],
-                headers={"Proxy-Authorization": f"Bearer {cfg['conn_token']}"},
-            )
-        }
+        # httpx 0.28: mounts= requires AsyncHTTPTransport, not raw Proxy objects
+        proxy = httpx.Proxy(
+            url=cfg["proxy_url"],
+            headers={"Proxy-Authorization": f"Bearer {cfg['conn_token']}"},
+        )
+        mounts = {"http://": httpx.AsyncHTTPTransport(proxy=proxy)}
 
     url = f"{cfg['s4_url']}{path}"
     logger.info("S4 OData GET %s params=%s", url, params)
