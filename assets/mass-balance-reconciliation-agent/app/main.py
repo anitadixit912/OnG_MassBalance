@@ -48,6 +48,8 @@ _CHAT_HTML = """<!DOCTYPE html>
   .samples label { font-size: 0.75rem; color: #555; align-self: center; white-space: nowrap; }
   .sample-btn { padding: 5px 12px; background: #fff; border: 1px solid #0070d2; border-radius: 16px; color: #0070d2; font-size: 0.78rem; cursor: pointer; white-space: nowrap; }
   .sample-btn:hover { background: #0070d2; color: #fff; }
+  .clear-btn { padding: 5px 12px; background: #fff; border: 1px solid #aaa; border-radius: 16px; color: #888; font-size: 0.78rem; cursor: pointer; white-space: nowrap; margin-left: auto; }
+  .clear-btn:hover { background: #f5f5f5; color: #555; border-color: #888; }
   .chat { flex: 1; overflow-y: auto; padding: 16px 24px; display: flex; flex-direction: column; gap: 12px; }
   .msg { max-width: 82%; padding: 12px 16px; border-radius: 8px; font-size: 0.9rem; line-height: 1.6; word-break: break-word; }
   .msg.user { align-self: flex-end; background: #0070d2; color: #fff; white-space: pre-wrap; }
@@ -102,6 +104,7 @@ _CHAT_HTML = """<!DOCTYPE html>
   <button class="sample-btn" onclick="ask('What is the closing stock for material CRUDE01 in plant 1000?')">Closing stock CRUDE01</button>
   <button class="sample-btn" onclick="ask('List all pending approval corrections')">Pending corrections</button>
   <button class="sample-btn" onclick="ask('Explain the variance classification rules')">Variance rules</button>
+  <button class="clear-btn" onclick="clearChat()" title="Clear chat history">&#128465; Clear</button>
 </div>
 
 <div class="chat" id="chat">
@@ -157,6 +160,11 @@ Click a sample question above or type your own below.</div>
   loadToken();
 
   function ask(text) { document.getElementById('input').value = text; sendMessage(); }
+
+  function clearChat() {
+    const chat = document.getElementById('chat');
+    chat.innerHTML = '<div class="msg agent">Chat cleared. Ask me anything about mass balance reconciliation.</div>';
+  }
 
   function handleKey(e) {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
