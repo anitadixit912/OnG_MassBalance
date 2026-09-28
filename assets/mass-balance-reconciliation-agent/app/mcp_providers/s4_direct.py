@@ -479,6 +479,109 @@ async def _discover_s4_services(filter_term: str = "") -> str:
 
 
 # --------------------------------------------------------------------------- #
+# Tool 5: get_plant_stock (all materials in a plant)                           #
+# --------------------------------------------------------------------------- #
+
+class PlantStockInput(BaseModel):
+    plant: str = Field(description="SAP plant code, e.g. '1000'")
+    min_quantity: float = Field(default=0.0, description="Only return materials with stock above this quantity (default 0 = all)")
+
+
+async def _get_plant_stock(plant: str, min_quantity: float = 0.0) -> str:
+    """Fetch all material stocks for a plant — no material filter needed."""
+    for svc_path in (_STOCK_SVC, _OGS_STOCK_SVC):
+        try:
+            data = await _s4_get(
+                f"{svc_path}/MatlStkInAcctMod",
+                params={
+                    "$filter": f"Plant eq '{plant}'",
+                    "$format": "json",
+                    "$top": "500",
+                    "$select": "Material,Plant,StorageLocation,MaterialBaseUnit,"
+                               "MatlWrhsStkQtyInMatlBaseUnit,QualityInspectionStockQuantity,BlockedStockQuantity",
+                },
+            )
+            rows = _fmt_odata(data)
+            result = []
+            for r in rows:
+                qty = float(r.get("MatlWrhsStkQtyInMatlBaseUnit", 0) or 0)
+                if qty > min_quantity:
+                    result.append({
+                        "Material": r.get("Material", ""),
+                        "Plant": r.get("Plant", ""),
+                        "StorageLocation": r.get("StorageLocation", ""),
+                        "StockQty": qty,
+                        "Unit": r.get("MaterialBaseUnit", ""),
+                    })
+            return json.dumps({"status": "ok", "plant": plant, "materials": result, "count": len(result)})
+
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 404:
+                continue
+            return json.dumps({"status": "error", "code": e.response.status_code, "message": str(e)})
+        except Exception as e:
+            return json.dumps({"status": "error", "message": str(e)})
+
+    return json.dumps({"status": "error", "message": "Material stock service not found"})
+
+
+# --------------------------------------------------------------------------- #
+# Tool 6: get_plant_movements (all movements for a plant on a date)            #
+# --------------------------------------------------------------------------- #
+
+class PlantMovementsInput(BaseModel):
+    plant: str = Field(description="SAP plant code, e.g. '1000'")
+    date_from: str = Field(description="Posting date from (YYYY-MM-DD)")
+    date_to: str = Field(description="Posting date to (YYYY-MM-DD)")
+
+
+async def _get_plant_movements(plant: str, date_from: str, date_to: str) -> str:
+    """Fetch ALL goods movements for a plant over a date range — no material filter."""
+    dt_from = f"datetime'{date_from}T00:00:00'"
+    dt_to = f"datetime'{date_to}T23:59:59'"
+    filters = [
+        f"Plant eq '{plant}'",
+        f"PostingDate ge {dt_from}",
+        f"PostingDate le {dt_to}",
+    ]
+    for svc_path in (_MAT_DOC_SVC, _OGS_MAT_DOC_SVC):
+        try:
+            data = await _s4_get(
+                f"{svc_path}/MaterialDocumentItem",
+                params={
+                    "$filter": " and ".join(filters),
+                    "$format": "json",
+                    "$top": "500",
+                    "$select": "MaterialDocument,MaterialDocumentItem,PostingDate,Material,"
+                               "Plant,StorageLocation,GoodsMovementType,QuantityInBaseUnit,BaseUnit",
+                },
+            )
+            rows = _fmt_odata(data)
+            result = []
+            for r in rows:
+                result.append({
+                    "MaterialDocument": r.get("MaterialDocument", ""),
+                    "Item": r.get("MaterialDocumentItem", ""),
+                    "PostingDate": r.get("PostingDate", ""),
+                    "Material": r.get("Material", ""),
+                    "GoodsMovementType": r.get("GoodsMovementType", ""),
+                    "Quantity": r.get("QuantityInBaseUnit", "0"),
+                    "Unit": r.get("BaseUnit", ""),
+                    "StorageLocation": r.get("StorageLocation", ""),
+                })
+            return json.dumps({"status": "ok", "plant": plant, "records": result, "count": len(result)})
+
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 404:
+                continue
+            return json.dumps({"status": "error", "code": e.response.status_code, "message": str(e)})
+        except Exception as e:
+            return json.dumps({"status": "error", "message": str(e)})
+
+    return json.dumps({"status": "error", "message": "Material document service not found"})
+
+
+# --------------------------------------------------------------------------- #
 # Build tool list                                                               #
 # --------------------------------------------------------------------------- #
 
@@ -486,10 +589,32 @@ def get_s4_direct_tools() -> list:
     """Return LangChain tools for direct S/4HANA OData access."""
     return [
         StructuredTool(
+            name="s4_get_plant_stock",
+            description=(
+                "Get current stock for ALL materials in a plant from SAP S/4HANA. "
+                "USE THIS FIRST when running mass balance for a plant — it discovers every material "
+                "with stock without needing a material number upfront."
+            ),
+            args_schema=PlantStockInput,
+            coroutine=_get_plant_stock,
+            handle_tool_error=True,
+        ),
+        StructuredTool(
+            name="s4_get_plant_movements",
+            description=(
+                "Get ALL goods movements for a plant over a date range from SAP S/4HANA. "
+                "USE THIS when running daily mass balance — fetches every movement across all materials "
+                "for the period without needing a material number upfront."
+            ),
+            args_schema=PlantMovementsInput,
+            coroutine=_get_plant_movements,
+            handle_tool_error=True,
+        ),
+        StructuredTool(
             name="s4_get_material_stock",
             description=(
-                "Get current material stock levels from SAP S/4HANA (OGS_S4 destination). "
-                "Returns unrestricted stock, quality inspection stock, and blocked stock by plant and storage location."
+                "Get current stock for a specific material in a plant from SAP S/4HANA. "
+                "Use when you already know the material number."
             ),
             args_schema=MaterialStockInput,
             coroutine=_get_material_stock,
@@ -498,8 +623,8 @@ def get_s4_direct_tools() -> list:
         StructuredTool(
             name="s4_get_material_documents",
             description=(
-                "Get goods movement material documents from SAP S/4HANA for a material, plant, and date range. "
-                "Returns movement type, quantity, posting date for receipts, issues, consumption, and transfers."
+                "Get goods movements for a specific material and plant over a date range. "
+                "Use when you already know the material number."
             ),
             args_schema=MaterialDocumentsInput,
             coroutine=_get_material_documents,
@@ -508,8 +633,8 @@ def get_s4_direct_tools() -> list:
         StructuredTool(
             name="s4_run_mass_balance",
             description=(
-                "Run the full mass balance calculation for a material and plant over a date range. "
-                "Fetches live stock and goods movements from SAP S/4HANA, calculates: "
+                "Run the full mass balance calculation for one material and plant over a date range. "
+                "Fetches live stock and movements from SAP S/4HANA, calculates: "
                 "Closing = Opening + Receipts - Issues - Consumption ± Transfers ± Adjustments, "
                 "and classifies any variance as INFO/ADVISORY/WARNING/CRITICAL."
             ),
@@ -520,8 +645,8 @@ def get_s4_direct_tools() -> list:
         StructuredTool(
             name="s4_discover_services",
             description=(
-                "Query the SAP OData service catalog to discover available services in the S/4HANA system. "
-                "Use this when unsure what APIs are available, or to find IS-Oil & Gas specific services."
+                "Query the SAP OData service catalog to discover all available services in the S/4HANA system. "
+                "Use when unsure what APIs are available or to find IS-Oil & Gas specific service names."
             ),
             args_schema=ServiceCatalogInput,
             coroutine=_discover_s4_services,

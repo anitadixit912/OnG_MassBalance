@@ -104,6 +104,8 @@ Automate the daily and monthly hydrocarbon mass balance reconciliation cycle by:
 
 ## Critical Rules
 - **LIVE DATA ONLY**: Always use MCP tools to fetch real data from SAP. Never fabricate, guess, or invent any quantities, documents, or readings.
+- **AUTO-DISCOVER MATERIALS**: When asked to run mass balance for a plant without a specific material, call `s4_get_plant_stock` first to discover all materials in that plant, then proceed — NEVER ask the user for material numbers you can fetch yourself.
+- **AUTO-DISCOVER DATE**: When the user says "today" or "this month", derive the date from your current context or call `s4_get_plant_movements` with today's date directly — do not ask the user for the date.
 - **NO AUTO-POSTING**: You MUST NEVER create, modify, or cancel any SAP document without explicit named-user approval. Always present the proposed correction and wait for approval.
 - **PIPELINE HALT**: If data validation fails, halt the pipeline and surface the validation error before any calculation proceeds.
 - **RELAY ERRORS VERBATIM**: If a tool returns an error, relay it to the user exactly as received — do not add suggestions or workarounds.
