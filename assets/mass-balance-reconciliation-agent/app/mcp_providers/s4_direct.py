@@ -19,14 +19,22 @@ from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
-# SAP OData service paths — standard S/4HANA + IS-Oil & Gas
-_STOCK_SVC = "/sap/opu/odata/sap/API_MATERIAL_STOCK_SRV"
-_MAT_DOC_SVC = "/sap/opu/odata/sap/API_MATERIAL_DOCUMENT_SRV"
-_PHYS_INV_SVC = "/sap/opu/odata/sap/API_PHYSICAL_INVENTORY_DOC_SRV"
+# Ordered (service_path, entity_set) pairs to try for each domain.
+# Both 403 and 404 trigger fallback to the next entry.
+# S/4HANA API Hub names first, then IS-Oil OGS variants.
+_STOCK_PATHS = [
+    ("/sap/opu/odata/sap/API_MATERIAL_STOCK_SRV", "MatlStkInAcctMod"),
+    ("/sap/opu/odata/sap/OGS_MATERIAL_STOCK_SRV", "MaterialStockSet"),
+    ("/sap/opu/odata/sap/OGS_MATERIAL_STOCK_SRV", "StockBalanceSet"),
+    ("/sap/opu/odata/sap/OGS_MATERIAL_STOCK_SRV", "MaterialStock"),
+]
 
-# Fallback IS-Oil specific paths
-_OGS_STOCK_SVC = "/sap/opu/odata/sap/OGS_MATERIAL_STOCK_SRV"
-_OGS_MAT_DOC_SVC = "/sap/opu/odata/sap/OGS_MATERIAL_DOCUMENT_SRV"
+_MOVEMENT_PATHS = [
+    ("/sap/opu/odata/sap/API_MATERIAL_DOCUMENT_SRV", "MaterialDocumentItem"),
+    ("/sap/opu/odata/sap/OGS_MATERIAL_DOCUMENT_SRV", "MaterialDocumentSet"),
+    ("/sap/opu/odata/sap/OGS_MATERIAL_DOCUMENT_SRV", "GoodsMovementSet"),
+    ("/sap/opu/odata/sap/MMIM_GOODS_MOVEMENT_SRV", "GoodsMovementSet"),
+]
 
 
 # --------------------------------------------------------------------------- #
@@ -144,7 +152,6 @@ async def _s4_get(path: str, params: dict | None = None) -> dict:
     if not cfg.get("s4_auth"):
         raise RuntimeError("OGS_S4 auth token not available from Destination Service")
 
-    proxies = None
     request_headers: dict = {
         "Authorization": cfg["s4_auth"],
         "sap-client": cfg["sap_client"],
@@ -152,9 +159,13 @@ async def _s4_get(path: str, params: dict | None = None) -> dict:
         "Accept": "application/json",
     }
 
+    # Include sap-client as URL param — some on-prem ICM configs strip headers
+    merged_params: dict = {"sap-client": cfg["sap_client"]}
+    if params:
+        merged_params.update(params)
+
     mounts: dict | None = None
     if cfg.get("conn_token"):
-        # httpx 0.28: mounts= requires AsyncHTTPTransport, not raw Proxy objects
         proxy = httpx.Proxy(
             url=cfg["proxy_url"],
             headers={"Proxy-Authorization": f"Bearer {cfg['conn_token']}"},
@@ -162,15 +173,21 @@ async def _s4_get(path: str, params: dict | None = None) -> dict:
         mounts = {"http://": httpx.AsyncHTTPTransport(proxy=proxy)}
 
     url = f"{cfg['s4_url']}{path}"
-    logger.info("S4 OData GET %s params=%s", url, params)
+    logger.info("S4 OData GET %s", url)
 
     client_kwargs: dict = {"timeout": 60}
     if mounts:
         client_kwargs["mounts"] = mounts
 
     async with httpx.AsyncClient(**client_kwargs) as client:
-        r = await client.get(url, headers=request_headers, params=params or {})
-        r.raise_for_status()
+        r = await client.get(url, headers=request_headers, params=merged_params)
+        if not r.is_success:
+            body = r.text[:500]
+            raise httpx.HTTPStatusError(
+                f"HTTP {r.status_code} for {url}: {body}",
+                request=r.request,
+                response=r,
+            )
         return r.json()
 
 
@@ -199,21 +216,23 @@ class MaterialStockInput(BaseModel):
 
 
 async def _get_material_stock(plant: str, material: str, storage_location: str = "") -> str:
-    """Fetch current material stock from S/4HANA API_MATERIAL_STOCK_SRV."""
+    """Fetch current material stock from SAP (tries multiple OData service paths)."""
     filters = [f"Plant eq '{plant}'", f"Material eq '{material}'"]
     if storage_location:
         filters.append(f"StorageLocation eq '{storage_location}'")
 
-    # Try standard S/4HANA API first, then IS-Oil fallback
-    for svc_path in (_STOCK_SVC, _OGS_STOCK_SVC):
+    tried: list[str] = []
+    for svc_path, entity in _STOCK_PATHS:
+        path_desc = f"{svc_path}/{entity}"
+        tried.append(path_desc)
         try:
             data = await _s4_get(
-                f"{svc_path}/MatlStkInAcctMod",
+                f"{svc_path}/{entity}",
                 params={"$filter": " and ".join(filters), "$format": "json", "$top": "50"},
             )
             rows = _fmt_odata(data)
             if not rows:
-                return json.dumps({"status": "no_data", "plant": plant, "material": material, "message": "No stock records found"})
+                return json.dumps({"status": "no_data", "plant": plant, "material": material})
 
             result = []
             for r in rows:
@@ -221,22 +240,22 @@ async def _get_material_stock(plant: str, material: str, storage_location: str =
                     "Material": r.get("Material", r.get("Matnr", "")),
                     "Plant": r.get("Plant", r.get("Werks", "")),
                     "StorageLocation": r.get("StorageLocation", r.get("Lgort", "")),
-                    "MaterialBaseUnit": r.get("MaterialBaseUnit", r.get("Meins", "")),
-                    "MatlWrhsStkQtyInMatlBaseUnit": r.get("MatlWrhsStkQtyInMatlBaseUnit", r.get("Labst", "0")),
-                    "QualityInspectionStockQuantity": r.get("QualityInspectionStockQuantity", "0"),
-                    "BlockedStockQuantity": r.get("BlockedStockQuantity", "0"),
-                    "RestrictedUseStockQuantity": r.get("RestrictedUseStockQuantity", "0"),
+                    "Unit": r.get("MaterialBaseUnit", r.get("Meins", "")),
+                    "UnrestrictedStock": r.get("MatlWrhsStkQtyInMatlBaseUnit", r.get("Labst", r.get("UnrestrictedStock", "0"))),
+                    "QIStock": r.get("QualityInspectionStockQuantity", r.get("QIStock", "0")),
+                    "BlockedStock": r.get("BlockedStockQuantity", r.get("BlockedStock", "0")),
                 })
-            return json.dumps({"status": "ok", "records": result, "count": len(result)})
+            return json.dumps({"status": "ok", "service": path_desc, "records": result, "count": len(result)})
 
         except httpx.HTTPStatusError as e:
-            if e.response.status_code == 404:
-                continue  # Try next service path
-            return json.dumps({"status": "error", "code": e.response.status_code, "message": str(e)})
+            if e.response.status_code in (403, 404):
+                logger.info("Service %s returned %s — trying next path", path_desc, e.response.status_code)
+                continue
+            return json.dumps({"status": "error", "service": path_desc, "code": e.response.status_code, "message": str(e)})
         except Exception as e:
-            return json.dumps({"status": "error", "message": str(e)})
+            return json.dumps({"status": "error", "service": path_desc, "message": str(e)})
 
-    return json.dumps({"status": "error", "message": "Material stock service not found at expected OData paths"})
+    return json.dumps({"status": "error", "message": f"No accessible stock service found. Tried: {tried}"})
 
 
 # --------------------------------------------------------------------------- #
@@ -252,8 +271,7 @@ class MaterialDocumentsInput(BaseModel):
 
 
 async def _get_material_documents(plant: str, material: str, date_from: str, date_to: str, movement_type: str = "") -> str:
-    """Fetch goods movement material documents from S/4HANA."""
-    # OData datetime format for S/4HANA
+    """Fetch goods movement material documents from SAP (tries multiple OData service paths)."""
     dt_from = f"datetime'{date_from}T00:00:00'"
     dt_to = f"datetime'{date_to}T23:59:59'"
 
@@ -266,41 +284,43 @@ async def _get_material_documents(plant: str, material: str, date_from: str, dat
     if movement_type:
         filters.append(f"GoodsMovementType eq '{movement_type}'")
 
-    for svc_path in (_MAT_DOC_SVC, _OGS_MAT_DOC_SVC):
+    tried: list[str] = []
+    for svc_path, entity in _MOVEMENT_PATHS:
+        path_desc = f"{svc_path}/{entity}"
+        tried.append(path_desc)
         try:
             data = await _s4_get(
-                f"{svc_path}/MaterialDocumentItem",
+                f"{svc_path}/{entity}",
                 params={
                     "$filter": " and ".join(filters),
                     "$format": "json",
                     "$top": "200",
-                    "$select": "MaterialDocument,MaterialDocumentItem,PostingDate,Material,Plant,StorageLocation,"
-                               "GoodsMovementType,QuantityInBaseUnit,BaseUnit,GoodsRecipientName,DocumentDate",
                 },
             )
             rows = _fmt_odata(data)
             result = []
             for r in rows:
                 result.append({
-                    "MaterialDocument": r.get("MaterialDocument", ""),
+                    "MaterialDocument": r.get("MaterialDocument", r.get("Mblnr", "")),
                     "Item": r.get("MaterialDocumentItem", r.get("Zeile", "")),
-                    "PostingDate": r.get("PostingDate", ""),
+                    "PostingDate": r.get("PostingDate", r.get("Budat", "")),
                     "GoodsMovementType": r.get("GoodsMovementType", r.get("Bwart", "")),
                     "Quantity": r.get("QuantityInBaseUnit", r.get("Menge", "0")),
-                    "BaseUnit": r.get("BaseUnit", r.get("Meins", "")),
-                    "Plant": r.get("Plant", ""),
-                    "StorageLocation": r.get("StorageLocation", ""),
+                    "Unit": r.get("BaseUnit", r.get("Meins", "")),
+                    "Plant": r.get("Plant", r.get("Werks", "")),
+                    "StorageLocation": r.get("StorageLocation", r.get("Lgort", "")),
                 })
-            return json.dumps({"status": "ok", "records": result, "count": len(result)})
+            return json.dumps({"status": "ok", "service": path_desc, "records": result, "count": len(result)})
 
         except httpx.HTTPStatusError as e:
-            if e.response.status_code == 404:
+            if e.response.status_code in (403, 404):
+                logger.info("Service %s returned %s — trying next path", path_desc, e.response.status_code)
                 continue
-            return json.dumps({"status": "error", "code": e.response.status_code, "message": str(e)})
+            return json.dumps({"status": "error", "service": path_desc, "code": e.response.status_code, "message": str(e)})
         except Exception as e:
-            return json.dumps({"status": "error", "message": str(e)})
+            return json.dumps({"status": "error", "service": path_desc, "message": str(e)})
 
-    return json.dumps({"status": "error", "message": "Material document service not found at expected OData paths"})
+    return json.dumps({"status": "error", "message": f"No accessible movement service found. Tried: {tried}"})
 
 
 # --------------------------------------------------------------------------- #
@@ -487,41 +507,53 @@ class PlantStockInput(BaseModel):
 
 
 async def _get_plant_stock(plant: str, min_quantity: float = 0.0) -> str:
-    """Fetch all material stocks for a plant — no material filter needed."""
-    for svc_path in (_STOCK_SVC, _OGS_STOCK_SVC):
+    """Fetch all material stocks for a plant — tries multiple OData service paths."""
+    tried: list[str] = []
+    for svc_path, entity in _STOCK_PATHS:
+        path_desc = f"{svc_path}/{entity}"
+        tried.append(path_desc)
         try:
             data = await _s4_get(
-                f"{svc_path}/MatlStkInAcctMod",
+                f"{svc_path}/{entity}",
                 params={
                     "$filter": f"Plant eq '{plant}'",
                     "$format": "json",
                     "$top": "500",
-                    "$select": "Material,Plant,StorageLocation,MaterialBaseUnit,"
-                               "MatlWrhsStkQtyInMatlBaseUnit,QualityInspectionStockQuantity,BlockedStockQuantity",
                 },
             )
             rows = _fmt_odata(data)
             result = []
             for r in rows:
-                qty = float(r.get("MatlWrhsStkQtyInMatlBaseUnit", 0) or 0)
+                # Try various field names across OData versions
+                qty_raw = (r.get("MatlWrhsStkQtyInMatlBaseUnit")
+                           or r.get("UnrestrictedStock")
+                           or r.get("Labst")
+                           or r.get("StockQuantity")
+                           or "0")
+                try:
+                    qty = float(qty_raw)
+                except (TypeError, ValueError):
+                    qty = 0.0
                 if qty > min_quantity:
                     result.append({
-                        "Material": r.get("Material", ""),
-                        "Plant": r.get("Plant", ""),
-                        "StorageLocation": r.get("StorageLocation", ""),
+                        "Material": r.get("Material", r.get("Matnr", "")),
+                        "Plant": r.get("Plant", r.get("Werks", "")),
+                        "StorageLocation": r.get("StorageLocation", r.get("Lgort", "")),
                         "StockQty": qty,
-                        "Unit": r.get("MaterialBaseUnit", ""),
+                        "Unit": r.get("MaterialBaseUnit", r.get("Meins", r.get("BaseUnit", ""))),
                     })
-            return json.dumps({"status": "ok", "plant": plant, "materials": result, "count": len(result)})
+            return json.dumps({"status": "ok", "service": path_desc, "plant": plant,
+                               "materials": result, "count": len(result)})
 
         except httpx.HTTPStatusError as e:
-            if e.response.status_code == 404:
+            if e.response.status_code in (403, 404):
+                logger.info("Service %s returned %s — trying next path", path_desc, e.response.status_code)
                 continue
-            return json.dumps({"status": "error", "code": e.response.status_code, "message": str(e)})
+            return json.dumps({"status": "error", "service": path_desc, "code": e.response.status_code, "message": str(e)})
         except Exception as e:
-            return json.dumps({"status": "error", "message": str(e)})
+            return json.dumps({"status": "error", "service": path_desc, "message": str(e)})
 
-    return json.dumps({"status": "error", "message": "Material stock service not found"})
+    return json.dumps({"status": "error", "message": f"No accessible stock service found. Tried: {tried}"})
 
 
 # --------------------------------------------------------------------------- #
@@ -535,7 +567,7 @@ class PlantMovementsInput(BaseModel):
 
 
 async def _get_plant_movements(plant: str, date_from: str, date_to: str) -> str:
-    """Fetch ALL goods movements for a plant over a date range — no material filter."""
+    """Fetch ALL goods movements for a plant over a date range — tries multiple OData service paths."""
     dt_from = f"datetime'{date_from}T00:00:00'"
     dt_to = f"datetime'{date_to}T23:59:59'"
     filters = [
@@ -543,41 +575,44 @@ async def _get_plant_movements(plant: str, date_from: str, date_to: str) -> str:
         f"PostingDate ge {dt_from}",
         f"PostingDate le {dt_to}",
     ]
-    for svc_path in (_MAT_DOC_SVC, _OGS_MAT_DOC_SVC):
+    tried: list[str] = []
+    for svc_path, entity in _MOVEMENT_PATHS:
+        path_desc = f"{svc_path}/{entity}"
+        tried.append(path_desc)
         try:
             data = await _s4_get(
-                f"{svc_path}/MaterialDocumentItem",
+                f"{svc_path}/{entity}",
                 params={
                     "$filter": " and ".join(filters),
                     "$format": "json",
                     "$top": "500",
-                    "$select": "MaterialDocument,MaterialDocumentItem,PostingDate,Material,"
-                               "Plant,StorageLocation,GoodsMovementType,QuantityInBaseUnit,BaseUnit",
                 },
             )
             rows = _fmt_odata(data)
             result = []
             for r in rows:
                 result.append({
-                    "MaterialDocument": r.get("MaterialDocument", ""),
-                    "Item": r.get("MaterialDocumentItem", ""),
-                    "PostingDate": r.get("PostingDate", ""),
-                    "Material": r.get("Material", ""),
-                    "GoodsMovementType": r.get("GoodsMovementType", ""),
-                    "Quantity": r.get("QuantityInBaseUnit", "0"),
-                    "Unit": r.get("BaseUnit", ""),
-                    "StorageLocation": r.get("StorageLocation", ""),
+                    "MaterialDocument": r.get("MaterialDocument", r.get("Mblnr", "")),
+                    "Item": r.get("MaterialDocumentItem", r.get("Zeile", "")),
+                    "PostingDate": r.get("PostingDate", r.get("Budat", "")),
+                    "Material": r.get("Material", r.get("Matnr", "")),
+                    "GoodsMovementType": r.get("GoodsMovementType", r.get("Bwart", "")),
+                    "Quantity": r.get("QuantityInBaseUnit", r.get("Menge", "0")),
+                    "Unit": r.get("BaseUnit", r.get("Meins", "")),
+                    "StorageLocation": r.get("StorageLocation", r.get("Lgort", "")),
                 })
-            return json.dumps({"status": "ok", "plant": plant, "records": result, "count": len(result)})
+            return json.dumps({"status": "ok", "service": path_desc, "plant": plant,
+                               "records": result, "count": len(result)})
 
         except httpx.HTTPStatusError as e:
-            if e.response.status_code == 404:
+            if e.response.status_code in (403, 404):
+                logger.info("Service %s returned %s — trying next path", path_desc, e.response.status_code)
                 continue
-            return json.dumps({"status": "error", "code": e.response.status_code, "message": str(e)})
+            return json.dumps({"status": "error", "service": path_desc, "code": e.response.status_code, "message": str(e)})
         except Exception as e:
-            return json.dumps({"status": "error", "message": str(e)})
+            return json.dumps({"status": "error", "service": path_desc, "message": str(e)})
 
-    return json.dumps({"status": "error", "message": "Material document service not found"})
+    return json.dumps({"status": "error", "message": f"No accessible movement service found. Tried: {tried}"})
 
 
 # --------------------------------------------------------------------------- #
