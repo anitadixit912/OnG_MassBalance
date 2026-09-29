@@ -30,6 +30,31 @@ service MassBalanceService @(path: '/odata/v4/mass-balance') {
         null as decisionCriticality : Integer
     };
 
+    // ── Approvals Workflow ────────────────────────────────────────────────────
+    // Separate projection on Exceptions pre-filtered to actionable severity
+    // (ADVISORY / WARNING / CRITICAL) with open/under-review status.
+    // Gives the Plant Manager a dedicated screen distinct from Exception Report.
+    @Capabilities.DeleteRestrictions.Deletable: false
+    entity Approvals as select from mb.Exception {
+        *,
+        null as severityCriticality : Integer,
+        null as statusCriticality   : Integer
+    } where severity in ('ADVISORY', 'WARNING', 'CRITICAL')
+      and   status   in ('OPEN', 'UNDER_REVIEW')
+        actions {
+            action approveCorrection(
+                approverName : String(100),
+                approverRole : String(100),
+                comments     : String
+            ) returns String;
+
+            action rejectCorrection(
+                approverName : String(100),
+                approverRole : String(100),
+                reason       : String
+            ) returns String;
+        };
+
     // ── Audit Log ─────────────────────────────────────────────────────────────
     @readonly
     @Capabilities.DeleteRestrictions.Deletable : false

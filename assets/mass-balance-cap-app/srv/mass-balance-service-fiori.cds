@@ -196,6 +196,78 @@ annotate service.Exceptions with {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// APPROVALS WORKFLOW — dedicated Plant Manager screen (ADVISORY/WARNING/CRITICAL
+// exceptions that are OPEN or UNDER_REVIEW)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+annotate service.Approvals with @(
+    UI.HeaderInfo: {
+        TypeName      : 'Pending Approval',
+        TypeNamePlural: 'Approval Workflow',
+        Title         : { Value: exceptionId },
+        Description   : { Value: material }
+    },
+    UI.SelectionFields: [ severity, plant, period, status ],
+    UI.LineItem: [
+        { Value: exceptionId,     Label: 'Exception ID' },
+        { Value: period,          Label: 'Period' },
+        { Value: plant,           Label: 'Plant' },
+        { Value: storageLocation, Label: 'SLoc (Tank)' },
+        { Value: material,        Label: 'Material' },
+        { Value: varianceMT,      Label: 'Variance MT' },
+        { Value: variancePct,     Label: 'Variance %' },
+        {
+            Value                    : severity,
+            Label                    : 'Severity',
+            Criticality              : severityCriticality,
+            CriticalityRepresentation: #WithIcon
+        },
+        { Value: rootCause,       Label: 'Root Cause' },
+        {
+            Value                    : status,
+            Label                    : 'Status',
+            Criticality              : statusCriticality,
+            CriticalityRepresentation: #WithIcon
+        },
+        { Value: recommendation,  Label: 'Recommended Correction' }
+    ],
+    UI.Facets: [
+        {
+            $Type : 'UI.ReferenceFacet',
+            Label : 'Exception Details',
+            Target: '@UI.FieldGroup#ApprovalDetails'
+        },
+        {
+            $Type : 'UI.ReferenceFacet',
+            Label : 'Evidence',
+            Target: '@UI.FieldGroup#ApprovalEvidence'
+        }
+    ],
+    UI.FieldGroup #ApprovalDetails: {
+        Label: 'Exception Details',
+        Data: [
+            { Value: exceptionId },
+            { Value: period },
+            { Value: plant },
+            { Value: storageLocation },
+            { Value: material },
+            { Value: varianceMT },
+            { Value: variancePct },
+            { Value: severity,  Criticality: severityCriticality },
+            { Value: rootCause },
+            { Value: status,    Criticality: statusCriticality }
+        ]
+    },
+    UI.FieldGroup #ApprovalEvidence: {
+        Label: 'Evidence & Correction',
+        Data: [
+            { Value: supportingDocuments, Label: 'Supporting SAP Documents' },
+            { Value: recommendation,      Label: 'Recommended Correction' }
+        ]
+    }
+);
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // APPROVAL ACTIONS — sub-table on Exception Object Page + standalone list
 // ═══════════════════════════════════════════════════════════════════════════════
 

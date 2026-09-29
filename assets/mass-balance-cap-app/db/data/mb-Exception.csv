@@ -1,0 +1,7 @@
+exceptionId,period,plant,storageLocation,material,varianceMT,variancePct,severity,rootCause,supportingDocuments,recommendation,status,createdAt
+EXC-2026-09-0001,2026-09,1000,T001,CRUDE01,-18.500,-0.0185,CRITICAL,MC,"[""4900012345"",""4900012346""]",Recalibrate tank T001 dip gauge and repost MI07 document. Variance exceeds monthly threshold by 2.3x.,OPEN,2026-09-29T06:05:32Z
+EXC-2026-09-0002,2026-09,1000,T003,GASOIL01,6.200,0.0062,WARNING,TF,"[""4900012350""]",Stock transport order 4500001234 goods in transit — confirm receipt at destination plant 2000.,UNDER_REVIEW,2026-09-29T06:05:32Z
+EXC-2026-09-0003,2026-09,1000,T005,NAPHTHA01,-2.100,-0.0021,ADVISORY,PL,"[""4900012355"",""4900012356""]",Variance within evaporation tolerance for light distillates. Monitor next 3 days.,OPEN,2026-09-29T06:05:32Z
+EXC-2026-09-0004,2026-09-28,1000,T003,CRUDE01,9.800,0.0098,WARNING,TX,"[""4900012360""]",Goods issue doc 4900012360 posted with wrong quantity. Reverse and repost with correct 1250 MT.,OPEN,2026-09-28T06:04:10Z
+EXC-2026-09-0005,2026-09-27,1000,T002,FUELOIL01,-25.300,-0.0253,CRITICAL,MC,"[""4900012340"",""4900012341""]",Gauge calibration fault confirmed on T002. Correction posted after approval.,CLOSED,2026-09-27T06:06:45Z
+EXC-2026-09-0006,2026-09,1000,T007,KERO01,0.800,0.0008,INFO,SY,"[""4900012370""]",Minor variance within INFO threshold. Logged for monitoring.,CLOSED,2026-09-29T06:05:32Z

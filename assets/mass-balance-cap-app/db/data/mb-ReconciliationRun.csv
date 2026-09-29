@@ -1,0 +1,5 @@
+ID,plant,period,status,dataCompleteness,overallVariancePct,tanksReconciled,exceptionCount,pendingApprovals,startedAt,completedAt,triggeredBy,agentReply
+a1b2c3d4-0001-0001-0001-000000000001,1000,2026-09,COMPLETE,100.00,-0.0008,12,3,2,2026-09-29T06:00:00Z,2026-09-29T06:05:32Z,ahmed.ali@refinery.com,Mass balance complete for plant 1000 period 2026-09. Overall variance -0.08% within monthly tolerance. 3 exceptions raised.
+a1b2c3d4-0001-0001-0001-000000000002,1000,2026-09-28,COMPLETE,100.00,0.0012,12,1,1,2026-09-28T06:00:00Z,2026-09-28T06:04:10Z,ahmed.ali@refinery.com,Daily run complete. 1 WARNING exception for CRUDE01 tank T003.
+a1b2c3d4-0001-0001-0001-000000000003,1000,2026-09-27,COMPLETE,95.00,0.0024,11,1,0,2026-09-27T06:00:00Z,2026-09-27T06:06:45Z,ahmed.ali@refinery.com,Daily run complete. 1 CRITICAL exception resolved after correction.
+a1b2c3d4-0001-0001-0001-000000000004,2000,2026-09,FAILED,60.00,0.0000,0,0,0,2026-09-29T07:00:00Z,,system,M2.missed: VALIDATION_FAILED — plant=2000 period=2026-09 error=Missing MOV domain data

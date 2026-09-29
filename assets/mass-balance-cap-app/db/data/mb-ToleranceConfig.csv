@@ -1,0 +1,6 @@
+ID,plant,materialGroup,dailyTolerancePct,monthlyTolerancePct,escalationAction
+d4e5f6a7-0001-0001-0001-000000000001,1000,Crude / Residual,0.0015,0.0008,Plant manager review
+d4e5f6a7-0001-0001-0001-000000000002,1000,Light Distillates,0.0010,0.0005,Operations review
+d4e5f6a7-0001-0001-0001-000000000003,1000,Finished Products,0.0012,0.0006,Quality and operations
+d4e5f6a7-0001-0001-0001-000000000004,1000,Specialty / Blends,0.0008,0.0004,Blending supervisor
+d4e5f6a7-0001-0001-0001-000000000005,ALL,All Products,0.0020,0.0010,Executive escalation

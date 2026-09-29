@@ -1,0 +1,3 @@
+ID,exceptionId,approverName,approverRole,decision,comments,actionTimestamp
+b2c3d4e5-0001-0001-0001-000000000001,EXC-2026-09-0005,Priya Sharma,Plant Manager,APPROVED,Gauge fault confirmed by instrument team. Correction approved.,2026-09-27T09:15:00Z
+b2c3d4e5-0001-0001-0001-000000000002,EXC-2026-09-0002,Priya Sharma,Plant Manager,REJECTED,Need further evidence on transit timeline before approval.,2026-09-29T08:30:00Z

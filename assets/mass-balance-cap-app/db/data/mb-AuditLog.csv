@@ -1,0 +1,6 @@
+ID,eventType,username,role,referenceId,details,logTimestamp
+c3d4e5f6-0001-0001-0001-000000000001,RUN_TRIGGERED,ahmed.ali@refinery.com,MassBalance.Engineer,a1b2c3d4-0001-0001-0001-000000000001,M1: Reconciliation run triggered for plant=1000 period=2026-09,2026-09-29T06:00:00Z
+c3d4e5f6-0001-0001-0001-000000000002,M5.achieved: HUMAN_APPROVAL_GATES_DEPLOYED,system,system,a1b2c3d4-0001-0001-0001-000000000001,plant=1000 period=2026-09 exceptions=3 completeness=100%,2026-09-29T06:05:32Z
+c3d4e5f6-0001-0001-0001-000000000003,APPROVAL_RECEIVED,Priya Sharma,MassBalance.Manager,EXC-2026-09-0005,M5.achieved: HUMAN_APPROVAL_GATES_DEPLOYED — approver=Priya Sharma role=Plant Manager correction_id=EXC-2026-09-0005,2026-09-27T09:15:00Z
+c3d4e5f6-0001-0001-0001-000000000004,APPROVAL_REJECTED,Priya Sharma,MassBalance.Manager,EXC-2026-09-0002,Correction rejected by Priya Sharma (Plant Manager). Reason: Need further evidence on transit timeline.,2026-09-29T08:30:00Z
+c3d4e5f6-0001-0001-0001-000000000005,RUN_TRIGGERED,ahmed.ali@refinery.com,MassBalance.Engineer,a1b2c3d4-0001-0001-0001-000000000002,M1: Reconciliation run triggered for plant=1000 period=2026-09-28,2026-09-28T06:00:00Z
