@@ -1,0 +1,9 @@
+node_modules/
+package-lock.json
+gen/
+dist/
+*.mtar
+mta_archives/
+.env
+*.db
+*.sqlite
