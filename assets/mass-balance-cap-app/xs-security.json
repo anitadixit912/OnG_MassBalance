@@ -1,0 +1,61 @@
+{
+    "xsappname": "mass-balance-cap-app",
+    "tenant-mode": "dedicated",
+    "description": "Refinery Mass Balance Reconciliation — CAP Fiori App Security",
+    "scopes": [
+        {
+            "name"       : "$XSAPPNAME.MassBalance.Engineer",
+            "description": "Trigger reconciliation runs, view exceptions, manage tolerance config"
+        },
+        {
+            "name"       : "$XSAPPNAME.MassBalance.Manager",
+            "description": "Approve/reject corrections, view KPI dashboard and audit log"
+        },
+        {
+            "name"       : "$XSAPPNAME.MassBalance.Compliance",
+            "description": "Read-only access to audit log and exception history"
+        }
+    ],
+    "attributes": [],
+    "role-templates": [
+        {
+            "name"           : "MassBalance.Engineer",
+            "description"    : "Refinery Engineer — triggers runs, reviews exceptions",
+            "scope-references": ["$XSAPPNAME.MassBalance.Engineer"]
+        },
+        {
+            "name"           : "MassBalance.Manager",
+            "description"    : "Plant Manager — approves corrections, reviews KPIs",
+            "scope-references": ["$XSAPPNAME.MassBalance.Manager", "$XSAPPNAME.MassBalance.Engineer"]
+        },
+        {
+            "name"           : "MassBalance.Compliance",
+            "description"    : "Compliance Officer — read-only audit access",
+            "scope-references": ["$XSAPPNAME.MassBalance.Compliance"]
+        }
+    ],
+    "role-collections": [
+        {
+            "name"          : "MassBalance_Engineer",
+            "description"   : "Refinery Engineer role collection",
+            "role-template-references": ["$XSAPPNAME.MassBalance.Engineer"]
+        },
+        {
+            "name"          : "MassBalance_Manager",
+            "description"   : "Plant Manager role collection",
+            "role-template-references": ["$XSAPPNAME.MassBalance.Manager"]
+        },
+        {
+            "name"          : "MassBalance_Compliance",
+            "description"   : "Compliance Officer role collection",
+            "role-template-references": ["$XSAPPNAME.MassBalance.Compliance"]
+        }
+    ],
+    "oauth2-configuration": {
+        "redirect-uris": [
+            "https://mass-balance-cap-app.cfapps.us10.hana.ondemand.com/**",
+            "http://localhost:5000/**",
+            "http://localhost:4004/**"
+        ]
+    }
+}

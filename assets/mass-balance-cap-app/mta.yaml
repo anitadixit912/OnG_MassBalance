@@ -1,0 +1,98 @@
+{
+    "_schema-version": "3.1",
+    "ID": "mass-balance-cap-app",
+    "version": "1.0.0",
+    "description": "Mass Balance Reconciliation CAP Fiori App — SAP BTP Cloud Foundry",
+
+    "modules": [
+
+        {
+            "name": "mass-balance-cap-app-srv",
+            "type": "nodejs",
+            "path": ".",
+            "parameters": {
+                "memory"          : "256M",
+                "disk-quota"      : "1024M",
+                "health-check-type": "http",
+                "health-check-http-endpoint": "/health",
+                "buildpacks"      : ["nodejs_buildpack"],
+                "routes"          : [
+                    { "route": "mass-balance-cap-app-srv.cfapps.us10.hana.ondemand.com" }
+                ]
+            },
+            "properties": {
+                "NODE_ENV"    : "production",
+                "cds_config"  : "{\"requires\":{\"db\":{\"kind\":\"hana\"}}}"
+            },
+            "build-parameters": {
+                "builder"  : "npm",
+                "build-result": ".",
+                "ignore"   : ["node_modules/", ".env"]
+            },
+            "provides": [
+                { "name": "mass-balance-cap-app-srv-api",
+                  "properties": {
+                      "srv-url": "${default-url}"
+                  }
+                }
+            ],
+            "requires": [
+                { "name": "mass-balance-cap-app-xsuaa" },
+                { "name": "mass-balance-cap-app-db" },
+                { "name": "proj-vector-destination-service" }
+            ]
+        },
+
+        {
+            "name": "mass-balance-cap-app-approuter",
+            "type": "approuter.nodejs",
+            "path": "app/mass-balance-ui",
+            "parameters": {
+                "memory"   : "64M",
+                "disk-quota": "256M",
+                "routes"   : [
+                    { "route": "mass-balance-cap-app.cfapps.us10.hana.ondemand.com" }
+                ]
+            },
+            "requires": [
+                { "name": "mass-balance-cap-app-xsuaa" },
+                { "name": "mass-balance-cap-app-srv-api",
+                  "group": "destinations",
+                  "properties": {
+                      "name"    : "cap-srv",
+                      "url"     : "~{srv-url}",
+                      "forwardAuthToken": true
+                  }
+                }
+            ]
+        }
+    ],
+
+    "resources": [
+        {
+            "name": "mass-balance-cap-app-xsuaa",
+            "type": "org.cloudfoundry.managed-service",
+            "parameters": {
+                "service"     : "xsuaa",
+                "service-plan": "application",
+                "path"        : "./xs-security.json",
+                "config"      : {
+                    "xsappname"  : "mass-balance-cap-app",
+                    "tenant-mode": "dedicated"
+                }
+            }
+        },
+        {
+            "name": "mass-balance-cap-app-db",
+            "type": "org.cloudfoundry.managed-service",
+            "parameters": {
+                "service"     : "hana",
+                "service-plan": "hdi-shared"
+            }
+        },
+        {
+            "name": "proj-vector-destination-service",
+            "type": "org.cloudfoundry.existing-service"
+        }
+    ]
+}

@@ -1,0 +1,26 @@
+{
+    "requires": {
+        "db": {
+            "[production]": { "kind": "hana" },
+            "[development]": { "kind": "sqlite", "credentials": { "url": ":memory:" } }
+        },
+        "auth": {
+            "[production]": { "kind": "xsuaa" },
+            "[development]": { "kind": "dummy" }
+        }
+    },
+    "server": {
+        "cors": true
+    },
+    "features": {
+        "fiori_preview": true
+    },
+    "log": {
+        "levels": {
+            "app"  : "info",
+            "db"   : "warn",
+            "agent": "info",
+            "s4"   : "info"
+        }
+    }
+}

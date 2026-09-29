@@ -1,0 +1,41 @@
+{
+    "name"       : "mass-balance-cap-app",
+    "version"    : "1.0.0",
+    "description": "Refinery Mass Balance Reconciliation — SAP CAP Node.js App with Fiori UI",
+    "engines"    : { "node": ">=20" },
+    "scripts": {
+        "start"  : "cds-serve",
+        "watch"  : "cds watch",
+        "build"  : "cds build --production",
+        "test"   : "jest --passWithNoTests",
+        "lint"   : "eslint srv/ --ext .js"
+    },
+    "dependencies": {
+        "@sap/cds"        : "^8",
+        "@sap/xssec"      : "^4",
+        "express"         : "^4",
+        "passport"        : "^0.7"
+    },
+    "devDependencies": {
+        "@sap/cds-dk"     : "^8",
+        "@cap-js/sqlite"  : "^1",
+        "jest"            : "^29",
+        "@sap/cds-test"   : "^0",
+        "eslint"          : "^8"
+    },
+    "cds": {
+        "requires": {
+            "db": {
+                "[production]": { "kind": "hana" },
+                "[development]": {
+                    "kind"       : "sqlite",
+                    "credentials": { "url": ":memory:" }
+                }
+            },
+            "auth": {
+                "[production]": { "kind": "xsuaa" },
+                "[development]": { "kind": "dummy" }
+            }
+        }
+    }
+}

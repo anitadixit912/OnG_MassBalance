@@ -1,0 +1,20 @@
+{
+    "welcomeFile": "/webapp/index.html",
+    "authenticationMethod": "route",
+    "logout": {
+        "logoutEndpoint": "/do/logout"
+    },
+    "routes": [
+        {
+            "source"     : "^/odata/v4/mass-balance/(.*)$",
+            "target"     : "/odata/v4/mass-balance/$1",
+            "destination": "cap-srv",
+            "csrfProtection": true
+        },
+        {
+            "source"     : "^/(.*)$",
+            "target"     : "/$1",
+            "localDir"   : "webapp"
+        }
+    ]
+}
