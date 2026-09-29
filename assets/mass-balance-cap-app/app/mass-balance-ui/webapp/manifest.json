@@ -10,14 +10,7 @@
             "mainService": {
                 "uri"    : "/odata/v4/mass-balance/",
                 "type"   : "OData",
-                "settings": {
-                    "odataVersion": "4.0",
-                    "annotations" : ["annotations"]
-                }
-            },
-            "annotations": {
-                "uri"    : "/odata/v4/mass-balance/$metadata",
-                "type"   : "ODataAnnotation"
+                "settings": { "odataVersion": "4.0" }
             }
         }
     },
@@ -30,32 +23,32 @@
         "archeType"      : "transactional"
     },
     "sap.ui5": {
-        "flexEnabled"    : true,
-        "dependencies"   : {
+        "flexEnabled": true,
+        "dependencies": {
             "minUI5Version": "1.120.0",
             "libs": {
-                "sap.m"                       : {},
-                "sap.ui.core"                 : {},
-                "sap.fe.templates"            : {},
-                "sap.fe.core"                 : {},
-                "sap.ui.layout"               : {},
-                "sap.ushell"                  : {}
+                "sap.m"            : {},
+                "sap.ui.core"      : {},
+                "sap.fe.templates" : {},
+                "sap.fe.core"      : {},
+                "sap.ui.layout"    : {},
+                "sap.ushell"       : {}
             }
         },
         "models": {
             "": {
-                "dataSource"         : "mainService",
-                "preload"            : true,
-                "settings"           : {
-                    "synchronizationMode"   : "None",
-                    "operationMode"         : "Server",
-                    "autoExpandSelect"      : true,
-                    "earlyRequests"         : true
+                "dataSource"  : "mainService",
+                "preload"     : true,
+                "settings"    : {
+                    "synchronizationMode": "None",
+                    "operationMode"      : "Server",
+                    "autoExpandSelect"   : true,
+                    "earlyRequests"      : true
                 }
             },
             "i18n": {
-                "type"     : "sap.ui.model.resource.ResourceModel",
-                "settings" : { "bundleName": "com.sap.mb.massbalanceui.i18n.i18n" }
+                "type"    : "sap.ui.model.resource.ResourceModel",
+                "settings": { "bundleName": "com.sap.mb.massbalanceui.i18n.i18n" }
             }
         },
         "routing": {
@@ -66,144 +59,82 @@
                 "controlAggregation": "pages"
             },
             "routes": [
-                {
-                    "pattern": "",
-                    "name"   : "ReconciliationRunsList",
-                    "target" : "ReconciliationRunsList"
-                },
-                {
-                    "pattern": "ReconciliationRuns({key}):?query:",
-                    "name"   : "ReconciliationRunsDetail",
-                    "target" : "ReconciliationRunsDetail"
-                },
-                {
-                    "pattern": "Exceptions",
-                    "name"   : "ExceptionsList",
-                    "target" : "ExceptionsList"
-                },
-                {
-                    "pattern": "Exceptions({key}):?query:",
-                    "name"   : "ExceptionsDetail",
-                    "target" : "ExceptionsDetail"
-                },
-                {
-                    "pattern": "Approvals",
-                    "name"   : "ApprovalsList",
-                    "target" : "ApprovalsList"
-                },
-                {
-                    "pattern": "AuditLog",
-                    "name"   : "AuditLogList",
-                    "target" : "AuditLogList"
-                },
-                {
-                    "pattern": "ToleranceConfig",
-                    "name"   : "ToleranceConfigList",
-                    "target" : "ToleranceConfigList"
-                },
-                {
-                    "pattern": "AgentChat",
-                    "name"   : "AgentChat",
-                    "target" : "AgentChat"
-                }
+                { "pattern": "",                          "name": "ReconciliationRunsList",   "target": "ReconciliationRunsList" },
+                { "pattern": "ReconciliationRuns({key})", "name": "ReconciliationRunsDetail", "target": "ReconciliationRunsDetail" },
+                { "pattern": "Exceptions",                "name": "ExceptionsList",           "target": "ExceptionsList" },
+                { "pattern": "Exceptions({key})",         "name": "ExceptionsDetail",         "target": "ExceptionsDetail" },
+                { "pattern": "Approvals",                 "name": "ApprovalsList",            "target": "ApprovalsList" },
+                { "pattern": "Approvals({key})",          "name": "ApprovalsDetail",          "target": "ApprovalsDetail" },
+                { "pattern": "AuditLog",                  "name": "AuditLogList",             "target": "AuditLogList" },
+                { "pattern": "ToleranceConfig",           "name": "ToleranceConfigList",      "target": "ToleranceConfigList" },
+                { "pattern": "DomainStatus",              "name": "DomainStatusList",         "target": "DomainStatusList" },
+                { "pattern": "AgentChat",                 "name": "AgentChat",                "target": "AgentChatPage" }
             ],
             "targets": {
                 "ReconciliationRunsList": {
-                    "type"       : "Component",
-                    "id"         : "ReconciliationRunsList",
-                    "name"       : "sap.fe.templates.ListReport",
-                    "options"    : {
-                        "settings": {
-                            "entitySet"          : "ReconciliationRuns",
-                            "variantManagement"  : "Page",
-                            "navigation"         : {
-                                "ReconciliationRuns": {
-                                    "detail": { "route": "ReconciliationRunsDetail" }
-                                }
-                            },
-                            "controlConfiguration": {
-                                "@com.sap.vocabularies.UI.v1.LineItem": {
-                                    "tableSettings": { "type": "ResponsiveTable" }
-                                }
-                            }
-                        }
-                    }
+                    "type": "Component", "id": "ReconciliationRunsList",
+                    "name": "sap.fe.templates.ListReport",
+                    "options": { "settings": {
+                        "entitySet": "ReconciliationRuns",
+                        "variantManagement": "Page",
+                        "navigation": { "ReconciliationRuns": { "detail": { "route": "ReconciliationRunsDetail" } } }
+                    }}
                 },
                 "ReconciliationRunsDetail": {
-                    "type"   : "Component",
-                    "id"     : "ReconciliationRunsDetail",
-                    "name"   : "sap.fe.templates.ObjectPage",
-                    "options": {
-                        "settings": { "entitySet": "ReconciliationRuns" }
-                    }
+                    "type": "Component", "id": "ReconciliationRunsDetail",
+                    "name": "sap.fe.templates.ObjectPage",
+                    "options": { "settings": { "entitySet": "ReconciliationRuns" } }
                 },
                 "ExceptionsList": {
-                    "type"   : "Component",
-                    "id"     : "ExceptionsList",
-                    "name"   : "sap.fe.templates.ListReport",
-                    "options": {
-                        "settings": {
-                            "entitySet"       : "Exceptions",
-                            "variantManagement": "Page",
-                            "navigation"      : {
-                                "Exceptions": {
-                                    "detail": { "route": "ExceptionsDetail" }
-                                }
-                            }
-                        }
-                    }
+                    "type": "Component", "id": "ExceptionsList",
+                    "name": "sap.fe.templates.ListReport",
+                    "options": { "settings": {
+                        "entitySet": "Exceptions",
+                        "variantManagement": "Page",
+                        "navigation": { "Exceptions": { "detail": { "route": "ExceptionsDetail" } } }
+                    }}
                 },
                 "ExceptionsDetail": {
-                    "type"   : "Component",
-                    "id"     : "ExceptionsDetail",
-                    "name"   : "sap.fe.templates.ObjectPage",
-                    "options": {
-                        "settings": { "entitySet": "Exceptions" }
-                    }
+                    "type": "Component", "id": "ExceptionsDetail",
+                    "name": "sap.fe.templates.ObjectPage",
+                    "options": { "settings": { "entitySet": "Exceptions" } }
                 },
                 "ApprovalsList": {
-                    "type"   : "Component",
-                    "id"     : "ApprovalsList",
-                    "name"   : "sap.fe.templates.ListReport",
-                    "options": {
-                        "settings": {
-                            "entitySet"       : "Exceptions",
-                            "variantManagement": "Page",
-                            "initialLoad"     : "Auto",
-                            "navigation"      : {
-                                "Exceptions": {
-                                    "detail": { "route": "ExceptionsDetail" }
-                                }
-                            }
-                        }
-                    }
+                    "type": "Component", "id": "ApprovalsList",
+                    "name": "sap.fe.templates.ListReport",
+                    "options": { "settings": {
+                        "entitySet": "Approvals",
+                        "variantManagement": "Page",
+                        "navigation": { "Approvals": { "detail": { "route": "ApprovalsDetail" } } }
+                    }}
+                },
+                "ApprovalsDetail": {
+                    "type": "Component", "id": "ApprovalsDetail",
+                    "name": "sap.fe.templates.ObjectPage",
+                    "options": { "settings": { "entitySet": "Approvals" } }
                 },
                 "AuditLogList": {
-                    "type"   : "Component",
-                    "id"     : "AuditLogList",
-                    "name"   : "sap.fe.templates.ListReport",
-                    "options": {
-                        "settings": { "entitySet": "AuditLogs" }
-                    }
+                    "type": "Component", "id": "AuditLogList",
+                    "name": "sap.fe.templates.ListReport",
+                    "options": { "settings": { "entitySet": "AuditLogs" } }
                 },
                 "ToleranceConfigList": {
-                    "type"   : "Component",
-                    "id"     : "ToleranceConfigList",
-                    "name"   : "sap.fe.templates.ListReport",
-                    "options": {
-                        "settings": {
-                            "entitySet": "ToleranceConfigs",
-                            "variantManagement": "Page"
-                        }
-                    }
+                    "type": "Component", "id": "ToleranceConfigList",
+                    "name": "sap.fe.templates.ListReport",
+                    "options": { "settings": {
+                        "entitySet": "ToleranceConfigs",
+                        "variantManagement": "Page"
+                    }}
                 },
-                "AgentChat": {
-                    "type"   : "Component",
-                    "id"     : "AgentChat",
-                    "name"   : "sap.fe.templates.ObjectPage",
-                    "options": {
-                        "settings": { "entitySet": "ReconciliationRuns" }
-                    }
+                "DomainStatusList": {
+                    "type": "Component", "id": "DomainStatusList",
+                    "name": "sap.fe.templates.ListReport",
+                    "options": { "settings": { "entitySet": "DomainStatuses" } }
+                },
+                "AgentChatPage": {
+                    "type": "Component", "id": "AgentChatPage",
+                    "name": "sap.fe.templates.ListReport",
+                    "options": { "settings": { "entitySet": "ReconciliationRuns" } }
                 }
             }
         }
