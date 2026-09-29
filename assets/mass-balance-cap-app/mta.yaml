@@ -21,8 +21,9 @@
                 ]
             },
             "properties": {
-                "NODE_ENV"    : "production",
-                "cds_config"  : "{\"requires\":{\"db\":{\"kind\":\"hana\"}}}"
+                "NODE_ENV"              : "production",
+                "cds_config"            : "{\"requires\":{\"db\":{\"kind\":\"hana\"}}}",
+                "MASS_BALANCE_AGENT_URL": "https://mass-balance-reconciliation-agent.cfapps.us10.hana.ondemand.com"
             },
             "build-parameters": {
                 "builder"  : "npm",

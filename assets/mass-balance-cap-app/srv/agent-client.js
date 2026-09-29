@@ -1,10 +1,15 @@
 'use strict';
 
-const { resolveDestination } = require('./dest-client');
+// The agent is a CF app in the same BTP subaccount — its public route is
+// injected via MASS_BALANCE_AGENT_URL in mta.yaml. No BTP Destination needed.
+// Auth is handled by forwarding the user's XSUAA JWT (principal propagation),
+// mirroring the JWTContextMiddleware already in the agent's main.py.
+const AGENT_URL = (process.env.MASS_BALANCE_AGENT_URL || '').replace(/\/$/, '');
 
-// The agent is registered as a BTP Destination named MASS_BALANCE_AGENT,
-// configured in the same proj-vector-destination-service as OGS_S4.
-// No hardcoded URLs — everything comes from the BTP Destination Service.
+if (!AGENT_URL) {
+    // Warn at startup so misconfiguration is obvious in CF logs
+    console.warn('[agent-client] MASS_BALANCE_AGENT_URL is not set.');
+}
 
 /**
  * Send a message to the Mass Balance Reconciliation Agent via A2A JSON-RPC 2.0.
@@ -14,13 +19,10 @@ const { resolveDestination } = require('./dest-client');
  * @returns {Promise<string>} Agent text reply
  */
 async function sendAgentMessage(message, contextId, userJwt) {
-    const { url, headers } = await resolveDestination('MASS_BALANCE_AGENT');
+    if (!AGENT_URL) throw new Error('MASS_BALANCE_AGENT_URL is not configured.');
 
-    const reqHeaders = { 'Content-Type': 'application/json', ...headers };
-    // Forward the user JWT so the agent's JWTContextMiddleware picks up the caller identity
-    if (userJwt && !reqHeaders['Authorization']) {
-        reqHeaders['Authorization'] = `Bearer ${userJwt}`;
-    }
+    const reqHeaders = { 'Content-Type': 'application/json' };
+    if (userJwt) reqHeaders['Authorization'] = `Bearer ${userJwt}`;
 
     const body = JSON.stringify({
         jsonrpc: '2.0',
@@ -36,7 +38,7 @@ async function sendAgentMessage(message, contextId, userJwt) {
         }
     });
 
-    const res = await fetch(url, { method: 'POST', headers: reqHeaders, body });
+    const res = await fetch(AGENT_URL, { method: 'POST', headers: reqHeaders, body });
     if (!res.ok) {
         const errText = await res.text();
         throw new Error(`Agent HTTP ${res.status}: ${errText}`);
