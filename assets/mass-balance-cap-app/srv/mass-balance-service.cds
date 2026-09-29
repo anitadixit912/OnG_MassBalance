@@ -4,7 +4,11 @@ service MassBalanceService @(path: '/odata/v4/mass-balance') {
 
     // ── Exceptions ────────────────────────────────────────────────────────────
     @Capabilities.DeleteRestrictions.Deletable: false
-    entity Exceptions as projection on mb.Exception
+    entity Exceptions as select from mb.Exception {
+        *,
+        null as severityCriticality : Integer,
+        null as statusCriticality   : Integer
+    }
         actions {
             action approveCorrection(
                 approverName : String(100),
@@ -21,7 +25,10 @@ service MassBalanceService @(path: '/odata/v4/mass-balance') {
 
     // ── Approval Actions ──────────────────────────────────────────────────────
     @readonly
-    entity ApprovalActions as projection on mb.ApprovalAction;
+    entity ApprovalActions as select from mb.ApprovalAction {
+        *,
+        null as decisionCriticality : Integer
+    };
 
     // ── Audit Log ─────────────────────────────────────────────────────────────
     @readonly
@@ -35,7 +42,10 @@ service MassBalanceService @(path: '/odata/v4/mass-balance') {
 
     // ── Reconciliation Runs ───────────────────────────────────────────────────
     @Capabilities.DeleteRestrictions.Deletable: false
-    entity ReconciliationRuns as projection on mb.ReconciliationRun
+    entity ReconciliationRuns as select from mb.ReconciliationRun {
+        *,
+        null as statusCriticality : Integer
+    }
         actions {
             action triggerReconciliation(
                 plant    : String(4),
@@ -46,7 +56,10 @@ service MassBalanceService @(path: '/odata/v4/mass-balance') {
 
     // ── Domain Statuses ───────────────────────────────────────────────────────
     @readonly
-    entity DomainStatuses as projection on mb.DomainStatus;
+    entity DomainStatuses as select from mb.DomainStatus {
+        *,
+        null as domainCriticality : Integer
+    };
 
     // ── Agent Chat ────────────────────────────────────────────────────────────
     action sendAgentMessage(

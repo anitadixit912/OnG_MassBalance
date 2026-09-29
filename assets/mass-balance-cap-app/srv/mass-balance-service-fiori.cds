@@ -102,10 +102,6 @@ annotate service.ReconciliationRuns with @(
     }
 );
 
-extend service.ReconciliationRuns with {
-    virtual statusCriticality: Integer;
-}
-
 // ═══════════════════════════════════════════════════════════════════════════════
 // EXCEPTIONS — List Report + Object Page
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -183,11 +179,6 @@ annotate service.Exceptions with @(
     }
 );
 
-extend service.Exceptions with {
-    virtual severityCriticality: Integer;
-    virtual statusCriticality  : Integer;
-}
-
 annotate service.Exceptions with {
     severity  @(
         Common.ValueListWithFixedValues: true,
@@ -229,10 +220,6 @@ annotate service.ApprovalActions with @(
         { Value: comments,         Label: 'Comments / Reason' }
     ]
 );
-
-extend service.ApprovalActions with {
-    virtual decisionCriticality: Integer;
-}
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // AUDIT LOG — read-only List Report
@@ -311,7 +298,3 @@ annotate service.DomainStatuses with @(
         { Value: fetchedAt,   Label: 'Last Fetched' }
     ]
 );
-
-extend service.DomainStatuses with {
-    virtual domainCriticality: Integer;
-}
