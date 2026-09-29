@@ -1,61 +1,23 @@
 'use strict';
 
-const AGENT_URL = process.env.MASS_BALANCE_AGENT_URL
-    || 'https://mass-balance-reconciliation-agent.cfapps.us10.hana.ondemand.com';
+const { resolveDestination } = require('./dest-client');
 
-/**
- * Resolve the Mass Balance Agent URL + auth headers.
- * Production: reads BTP Destination Service binding from VCAP_SERVICES,
- * fetches a client-credentials token, then resolves the MASS_BALANCE_AGENT destination.
- * Local dev: falls back to MASS_BALANCE_AGENT_URL env var.
- */
-async function _resolveAgentDestination() {
-    let services = {};
-    try { services = JSON.parse(process.env.VCAP_SERVICES || '{}'); } catch { /**/ }
-
-    for (const svc of (services['destination'] || [])) {
-        const creds = svc.credentials || {};
-        if (!creds.uri || !creds.clientid) continue;
-        try {
-            const tokenRes = await fetch(`${creds.url}/oauth/token`, {
-                method : 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body   : new URLSearchParams({
-                    grant_type   : 'client_credentials',
-                    client_id    : creds.clientid,
-                    client_secret: creds.clientsecret
-                })
-            });
-            const { access_token } = await tokenRes.json();
-
-            const destRes = await fetch(
-                `${creds.uri}/destination-configuration/v1/destinations/MASS_BALANCE_AGENT`,
-                { headers: { Authorization: `Bearer ${access_token}` } }
-            );
-            if (!destRes.ok) continue;
-            const dest = await destRes.json();
-            const url = dest.destinationConfiguration?.URL || AGENT_URL;
-            const authTokens = dest.authTokens || [];
-            const extraHeaders = authTokens.length
-                ? { Authorization: `${authTokens[0].type} ${authTokens[0].value}` }
-                : {};
-            return { url, headers: extraHeaders };
-        } catch { continue; }
-    }
-    return { url: AGENT_URL, headers: {} };
-}
+// The agent is registered as a BTP Destination named MASS_BALANCE_AGENT,
+// configured in the same proj-vector-destination-service as OGS_S4.
+// No hardcoded URLs — everything comes from the BTP Destination Service.
 
 /**
  * Send a message to the Mass Balance Reconciliation Agent via A2A JSON-RPC 2.0.
  * @param {string} message    User text
  * @param {string} contextId  Conversation context (stable per UI session)
- * @param {string} [userJwt]  Optional CF JWT for principal propagation
+ * @param {string} [userJwt]  Optional CF XSUAA JWT for principal propagation
  * @returns {Promise<string>} Agent text reply
  */
 async function sendAgentMessage(message, contextId, userJwt) {
-    const { url, headers } = await _resolveAgentDestination();
+    const { url, headers } = await resolveDestination('MASS_BALANCE_AGENT');
 
     const reqHeaders = { 'Content-Type': 'application/json', ...headers };
+    // Forward the user JWT so the agent's JWTContextMiddleware picks up the caller identity
     if (userJwt && !reqHeaders['Authorization']) {
         reqHeaders['Authorization'] = `Bearer ${userJwt}`;
     }
@@ -88,7 +50,6 @@ async function sendAgentMessage(message, contextId, userJwt) {
 
 /**
  * Trigger a mass balance reconciliation run via the agent.
- * Constructs the natural-language command the agent expects.
  */
 async function triggerReconciliation(plant, period, contextId, userJwt) {
     const message = `Run mass balance reconciliation for plant ${plant} for period ${period}`;

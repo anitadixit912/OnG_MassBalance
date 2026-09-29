@@ -1,48 +1,11 @@
 'use strict';
 
-// Base URL for local dev; overridden by BTP Destination 'OGS_S4' in production
-const OGS_S4_URL = process.env.MASS_BALANCE_OGS_S4_URL || '';
+const { resolveDestination } = require('./dest-client');
 
-/**
- * Resolve the OGS_S4 destination URL + auth headers.
- * Mirrors the Python ogs_s4.py pattern: VCAP_SERVICES → Destination Service
- * client-credentials token → OGS_S4 destination config.
- */
+// All S/4HANA OData calls go through the OGS_S4 BTP Destination,
+// configured in proj-vector-destination-service (same as the agents).
 async function _resolveOgsS4() {
-    let services = {};
-    try { services = JSON.parse(process.env.VCAP_SERVICES || '{}'); } catch { /**/ }
-
-    for (const svc of (services['destination'] || [])) {
-        const creds = svc.credentials || {};
-        if (!creds.uri || !creds.clientid) continue;
-        try {
-            const tokenRes = await fetch(`${creds.url}/oauth/token`, {
-                method : 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body   : new URLSearchParams({
-                    grant_type   : 'client_credentials',
-                    client_id    : creds.clientid,
-                    client_secret: creds.clientsecret
-                })
-            });
-            const { access_token } = await tokenRes.json();
-
-            const destRes = await fetch(
-                `${creds.uri}/destination-configuration/v1/destinations/OGS_S4`,
-                { headers: { Authorization: `Bearer ${access_token}` } }
-            );
-            if (!destRes.ok) continue;
-            const dest = await destRes.json();
-            const url = dest.destinationConfiguration?.URL || OGS_S4_URL;
-            const authTokens = dest.authTokens || [];
-            const extraHeaders = authTokens.length
-                ? { Authorization: `${authTokens[0].type} ${authTokens[0].value}` }
-                : {};
-            return { url, headers: extraHeaders };
-        } catch { continue; }
-    }
-    if (!OGS_S4_URL) throw new Error('OGS_S4 destination not configured. Set MASS_BALANCE_OGS_S4_URL for local dev.');
-    return { url: OGS_S4_URL, headers: {} };
+    return resolveDestination('OGS_S4');
 }
 
 async function _odata(path, params = {}) {
