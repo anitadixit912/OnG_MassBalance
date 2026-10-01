@@ -5,12 +5,14 @@ Resolves the 'aicore' destination and returns LiteLLM-compatible params.
 import json
 import logging
 import os
+import time
 from typing import Optional
 
 import httpx
 
 logger = logging.getLogger(__name__)
 _cache: dict = {}
+_cache_expiry: float = 0
 
 
 def _get_destination_credentials() -> dict:
@@ -53,10 +55,10 @@ def _resolve_destination(creds: dict, token: str, name: str) -> tuple[str, str]:
 def get_aicore_litellm_params(destination_name: str = "aicore") -> dict:
     """
     Returns LiteLLM params for SAP AI Core via BTP Destination Service.
-    Uses openai/ prefix with deployment-specific URL — bypasses LiteLLM SAP provider.
+    Token is refreshed every 10 minutes to avoid 401 from stale bearer tokens.
     """
-    global _cache
-    if _cache:
+    global _cache, _cache_expiry
+    if _cache and time.time() < _cache_expiry:
         return _cache
 
     try:
@@ -76,6 +78,7 @@ def get_aicore_litellm_params(destination_name: str = "aicore") -> dict:
             "api_key": bearer,
             "extra_headers": {"AI-Resource-Group": resource_group},
         }
+        _cache_expiry = time.time() + 600  # refresh every 10 minutes
         logger.info("AI Core resolved: %s", api_base)
         return _cache
 
