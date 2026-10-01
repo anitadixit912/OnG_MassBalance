@@ -15,7 +15,7 @@
         "cors": true
     },
     "features": {
-        "fiori_preview": true
+        "fiori_preview": false
     },
     "log": {
         "levels": {

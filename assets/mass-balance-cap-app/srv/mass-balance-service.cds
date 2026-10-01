@@ -86,6 +86,13 @@ service MassBalanceService @(path: '/odata/v4/mass-balance') {
         null as domainCriticality : Integer
     };
 
+    // ── Unbound: trigger a new reconciliation run ─────────────────────────────
+    action triggerReconciliation(
+        plant    : String(4),
+        period   : String(10),
+        contextId: String
+    ) returns String;
+
     // ── Agent Chat ────────────────────────────────────────────────────────────
     action sendAgentMessage(
         message  : String,

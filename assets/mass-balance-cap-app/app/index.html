@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Mass Balance Reconciliation</title>
+<style>
+  :root {
+    --sidebar-w: 220px;
+    --hdr-h: 54px;
+    --sap-blue: #0070f2;
+    --sap-blue-dk: #0040b0;
+    --sap-teal: #0a6ed1;
+    --sap-green: #107e3e;
+    --sap-orange: #e9730c;
+    --sap-red: #bb0000;
+    --sap-grey: #6a6d70;
+    --bg: #f5f6f7;
+    --surface: #ffffff;
+    --border: #d9dadc;
+    --text: #1d2d3e;
+    --text-light: #6a6d70;
+    --badge-open: #e8f0fe;
+    --badge-done: #e6f4ea;
+    --badge-warn: #fff3e0;
+    --badge-err: #fce8e6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: '72',Arial,sans-serif; background: var(--bg); color: var(--text); }
+
+  /* ── HEADER ───────────────────────────────────────────────────────── */
+  header {
+    position: fixed; top: 0; left: 0; right: 0; height: var(--hdr-h);
+    background: var(--sap-blue); color: #fff;
+    display: flex; align-items: center; gap: 12px; padding: 0 20px;
+    z-index: 100; box-shadow: 0 2px 6px rgba(0,0,0,.18);
+  }
+  header .logo { font-size: 18px; font-weight: 700; letter-spacing: .5px; flex: 1; }
+  header .sub  { font-size: 12px; opacity: .8; }
+  header .user { font-size: 13px; background: rgba(255,255,255,.2); border-radius: 16px; padding: 4px 12px; }
+
+  /* ── SIDEBAR ──────────────────────────────────────────────────────── */
+  nav {
+    position: fixed; top: var(--hdr-h); left: 0; bottom: 0;
+    width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border);
+    overflow-y: auto; z-index: 90;
+  }
+  nav .nav-section { padding: 14px 16px 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--text-light); letter-spacing: .8px; }
+  nav a {
+    display: flex; align-items: center; gap: 10px; padding: 10px 18px;
+    text-decoration: none; color: var(--text); font-size: 13.5px; transition: background .15s;
+    cursor: pointer; border-left: 3px solid transparent;
+  }
+  nav a:hover { background: #eaf2fb; }
+  nav a.active { background: #e8f2ff; border-left-color: var(--sap-blue); color: var(--sap-blue); font-weight: 600; }
+  nav a .ico { width: 18px; text-align: center; font-size: 15px; }
+
+  /* ── MAIN CONTENT ─────────────────────────────────────────────────── */
+  main {
+    margin-top: var(--hdr-h); margin-left: var(--sidebar-w);
+    padding: 24px 28px; min-height: calc(100vh - var(--hdr-h));
+  }
+
+  /* ── SCREEN TITLE ─────────────────────────────────────────────────── */
+  .screen-title { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  .screen-sub   { font-size: 13px; color: var(--text-light); margin-bottom: 20px; }
+
+  /* ── KPI CARDS ────────────────────────────────────────────────────── */
+  .kpi-row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
+  .kpi-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 18px 24px; min-width: 170px; flex: 1;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  }
+  .kpi-card .kpi-label { font-size: 11px; text-transform: uppercase; color: var(--text-light); letter-spacing: .5px; margin-bottom: 8px; }
+  .kpi-card .kpi-value { font-size: 28px; font-weight: 700; color: var(--sap-blue); }
+  .kpi-card .kpi-delta { font-size: 12px; color: var(--text-light); margin-top: 4px; }
+  .kpi-card.green .kpi-value { color: var(--sap-green); }
+  .kpi-card.orange .kpi-value { color: var(--sap-orange); }
+  .kpi-card.red .kpi-value   { color: var(--sap-red); }
+
+  /* ── TABLE ────────────────────────────────────────────────────────── */
+  .toolbar {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .toolbar input[type=text] {
+    border: 1px solid var(--border); border-radius: 4px; padding: 7px 12px;
+    font-size: 13px; width: 240px; color: var(--text);
+  }
+  .toolbar input[type=text]:focus { outline: none; border-color: var(--sap-blue); }
+  .toolbar select {
+    border: 1px solid var(--border); border-radius: 4px; padding: 7px 10px;
+    font-size: 13px; color: var(--text); background: white;
+  }
+  .toolbar .spacer { flex: 1; }
+  .btn {
+    padding: 7px 16px; border-radius: 4px; font-size: 13px; font-weight: 600;
+    cursor: pointer; border: 1px solid; transition: .15s;
+  }
+  .btn-primary { background: var(--sap-blue); color: #fff; border-color: var(--sap-blue); }
+  .btn-primary:hover { background: var(--sap-blue-dk); }
+  .btn-ghost { background: #fff; color: var(--sap-blue); border-color: var(--sap-blue); }
+  .btn-ghost:hover { background: #eaf2fb; }
+  .btn-danger { background: var(--sap-red); color: #fff; border-color: var(--sap-red); }
+  .btn-success { background: var(--sap-green); color: #fff; border-color: var(--sap-green); }
+  .btn-sm { padding: 4px 10px; font-size: 12px; }
+
+  .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: auto; box-shadow: 0 1px 3px rgba(0,0,0,.05); }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  thead th { background: #f0f2f5; padding: 10px 14px; text-align: left; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .4px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  tbody td { padding: 10px 14px; border-bottom: 1px solid #f0f2f5; vertical-align: middle; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: #f8fafc; }
+  tbody tr.selected { background: #e8f2ff; }
+  .empty-row td { text-align: center; padding: 40px; color: var(--text-light); font-style: italic; }
+
+  /* ── BADGES ───────────────────────────────────────────────────────── */
+  .badge {
+    display: inline-block; padding: 2px 10px; border-radius: 10px;
+    font-size: 11px; font-weight: 700; letter-spacing: .4px; white-space: nowrap;
+  }
+  .badge-red    { background: var(--badge-err);  color: var(--sap-red); }
+  .badge-orange { background: var(--badge-warn); color: var(--sap-orange); }
+  .badge-blue   { background: var(--badge-open); color: var(--sap-teal); }
+  .badge-green  { background: var(--badge-done); color: var(--sap-green); }
+  .badge-grey   { background: #f0f2f5; color: var(--sap-grey); }
+
+  /* ── DETAIL PANEL ─────────────────────────────────────────────────── */
+  .detail-panel {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 24px; margin-top: 20px; box-shadow: 0 1px 3px rgba(0,0,0,.05);
+  }
+  .detail-panel h3 { font-size: 16px; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+  .detail-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+  .detail-field .lbl { font-size: 11px; text-transform: uppercase; color: var(--text-light); letter-spacing: .4px; margin-bottom: 4px; }
+  .detail-field .val { font-size: 14px; font-weight: 500; }
+  .detail-field .val.long { font-size: 13px; font-weight: 400; line-height: 1.5; }
+
+  /* ── FORM (modal) ─────────────────────────────────────────────────── */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.45);
+    z-index: 200; display: flex; align-items: center; justify-content: center;
+  }
+  .overlay.hidden { display: none; }
+  .modal {
+    background: #fff; border-radius: 10px; padding: 28px 32px;
+    min-width: 420px; max-width: 560px; width: 90%;
+    box-shadow: 0 8px 32px rgba(0,0,0,.2);
+  }
+  .modal h3 { font-size: 17px; margin-bottom: 20px; }
+  .form-row { margin-bottom: 14px; }
+  .form-row label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 5px; color: var(--text-light); text-transform: uppercase; letter-spacing: .4px; }
+  .form-row input, .form-row select, .form-row textarea {
+    width: 100%; border: 1px solid var(--border); border-radius: 4px;
+    padding: 8px 12px; font-size: 13px; color: var(--text);
+  }
+  .form-row textarea { resize: vertical; height: 80px; }
+  .form-row input:focus, .form-row select:focus, .form-row textarea:focus { outline: none; border-color: var(--sap-blue); }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+
+  /* ── AI CHAT ──────────────────────────────────────────────────────── */
+  .chat-wrap { display: flex; flex-direction: column; height: calc(100vh - var(--hdr-h) - 120px); }
+  .chat-messages {
+    flex: 1; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px;
+    padding: 16px; background: #f9fafb; display: flex; flex-direction: column; gap: 12px;
+  }
+  .chat-msg { max-width: 80%; padding: 10px 14px; border-radius: 10px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
+  .chat-msg.user { align-self: flex-end; background: var(--sap-blue); color: #fff; border-bottom-right-radius: 2px; }
+  .chat-msg.agent { align-self: flex-start; background: #fff; border: 1px solid var(--border); color: var(--text); border-bottom-left-radius: 2px; }
+  .chat-msg.thinking { align-self: flex-start; color: var(--text-light); font-style: italic; font-size: 13px; }
+  .chat-input-row { display: flex; gap: 10px; margin-top: 12px; }
+  .chat-input-row input {
+    flex: 1; border: 1px solid var(--border); border-radius: 6px;
+    padding: 10px 14px; font-size: 14px;
+  }
+  .chat-input-row input:focus { outline: none; border-color: var(--sap-blue); }
+
+  /* ── DOMAIN STATUS GRID ───────────────────────────────────────────── */
+  .domain-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; margin-bottom: 20px; }
+  .domain-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 16px 20px; box-shadow: 0 1px 3px rgba(0,0,0,.05);
+  }
+  .domain-card .d-name { font-size: 13px; font-weight: 700; letter-spacing: .5px; margin-bottom: 6px; }
+  .domain-card .d-count { font-size: 26px; font-weight: 700; }
+  .domain-card .d-status { font-size: 11px; margin-top: 4px; }
+  .domain-card.live   { border-left: 4px solid var(--sap-green); }
+  .domain-card.live .d-count   { color: var(--sap-green); }
+  .domain-card.stale  { border-left: 4px solid var(--sap-orange); }
+  .domain-card.stale .d-count  { color: var(--sap-orange); }
+  .domain-card.missing{ border-left: 4px solid var(--sap-red); }
+  .domain-card.missing .d-count{ color: var(--sap-red); }
+
+  /* ── LOADER ───────────────────────────────────────────────────────── */
+  .spinner { text-align: center; padding: 40px; color: var(--text-light); font-size: 14px; }
+  .spinner::before { content: '⟳ '; animation: spin 1s linear infinite; display: inline-block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── TOAST ────────────────────────────────────────────────────────── */
+  #toast {
+    position: fixed; bottom: 28px; right: 28px; z-index: 500;
+    background: #333; color: #fff; padding: 12px 20px; border-radius: 6px;
+    font-size: 13px; max-width: 360px; box-shadow: 0 4px 14px rgba(0,0,0,.25);
+    transition: opacity .3s; opacity: 0; pointer-events: none;
+  }
+  #toast.show { opacity: 1; }
+  #toast.ok   { background: var(--sap-green); }
+  #toast.err  { background: var(--sap-red); }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">⚖ Mass Balance Reconciliation</div>
+  <div class="sub">SAP IS-Oil &amp; Gas · Refinery Operations</div>
+  <div class="user" id="hdr-user">Plant 1000</div>
+</header>
+
+<!-- SIDEBAR -->
+<nav id="sidebar">
+  <div class="nav-section">Overview</div>
+  <a class="nav-link active" data-screen="kpi" href="#kpi"><span class="ico">📊</span> KPI Dashboard</a>
+  <a class="nav-link" data-screen="domain" href="#domain"><span class="ico">🗄</span> Domain Status</a>
+
+  <div class="nav-section">Exceptions</div>
+  <a class="nav-link" data-screen="exceptions" href="#exceptions"><span class="ico">⚠</span> Exception Report</a>
+  <a class="nav-link" data-screen="approvals" href="#approvals"><span class="ico">✅</span> Approval Workflow</a>
+
+  <div class="nav-section">Configuration</div>
+  <a class="nav-link" data-screen="tolerances" href="#tolerances"><span class="ico">⚙</span> Tolerance Config</a>
+  <a class="nav-link" data-screen="audit" href="#audit"><span class="ico">📋</span> Audit Trail</a>
+
+  <div class="nav-section">AI Agent</div>
+  <a class="nav-link" data-screen="chat" href="#chat"><span class="ico">🤖</span> AI Assistant</a>
+</nav>
+
+<!-- MAIN -->
+<main id="main"></main>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- APPROVE/REJECT MODAL -->
+<div class="overlay hidden" id="modal-overlay">
+  <div class="modal" id="modal-box">
+    <h3 id="modal-title">Approve Correction</h3>
+    <div class="form-row">
+      <label>Your Name</label>
+      <input id="m-name" type="text" placeholder="e.g. Priya Sharma"/>
+    </div>
+    <div class="form-row">
+      <label>Your Role</label>
+      <input id="m-role" type="text" placeholder="e.g. Plant Manager"/>
+    </div>
+    <div class="form-row">
+      <label id="m-comment-label">Comments</label>
+      <textarea id="m-comments" placeholder="Optional comments…"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="m-confirm" onclick="submitModal()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- TRIGGER RUN MODAL -->
+<div class="overlay hidden" id="run-modal-overlay">
+  <div class="modal">
+    <h3>Trigger Mass Balance Run</h3>
+    <div class="form-row">
+      <label>Plant</label>
+      <select id="run-plant">
+        <option value="1000">1000 — Main Refinery</option>
+        <option value="2000">2000 — Satellite Plant</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label>Period</label>
+      <input id="run-period" type="text" placeholder="YYYY-MM or YYYY-MM-DD" value="2026-10"/>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="document.getElementById('run-modal-overlay').classList.add('hidden')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitRun()">Run</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════════════════════════════════
+const BASE = '/odata/v4/mass-balance';
+const AGENT_BASE = '';  // CAP unbound action via same OData service
+
+// ═══════════════════════════════════════════════════════════════════════
+// ROUTING
+// ═══════════════════════════════════════════════════════════════════════
+let currentScreen = null;
+let modalAction = null;
+let modalExceptionId = null;
+
+document.querySelectorAll('.nav-link').forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    navigate(a.dataset.screen);
+  });
+});
+
+function navigate(screen) {
+  currentScreen = screen;
+  document.querySelectorAll('.nav-link').forEach(a => a.classList.toggle('active', a.dataset.screen === screen));
+  window.location.hash = screen;
+  renderScreen(screen);
+}
+
+window.addEventListener('hashchange', () => {
+  const s = location.hash.slice(1) || 'kpi';
+  if (s !== currentScreen) navigate(s);
+});
+
+// ═══════════════════════════════════════════════════════════════════════
+// OData FETCH HELPER
+// ═══════════════════════════════════════════════════════════════════════
+async function od(path) {
+  const r = await fetch(BASE + path, { headers: { Accept: 'application/json' } });
+  if (!r.ok) throw new Error(r.status + ' ' + r.statusText);
+  const j = await r.json();
+  return j.value !== undefined ? j.value : j;
+}
+
+async function odAction(entitySet, key, action, body) {
+  const url = key
+    ? BASE + '/' + entitySet + '(' + encodeURIComponent(key) + ')/' + action
+    : BASE + '/' + action;
+  const r = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (!r.ok) {
+    const t = await r.text();
+    throw new Error(t);
+  }
+  return r.json();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════════════════════════
+function toast(msg, type = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show ' + type;
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.className = ''; }, 3500);
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// FORMATTERS
+// ═══════════════════════════════════════════════════════════════════════
+function fmtPct(v) { return v != null ? (v * 100).toFixed(4) + ' %' : '—'; }
+function fmtNum(v) { return v != null ? Number(v).toLocaleString() : '—'; }
+function fmtTs(v)  { return v ? new Date(v).toLocaleString() : '—'; }
+function fmtDate(v){ return v ? v.substring(0,10) : '—'; }
+
+function severityBadge(s) {
+  const map = { CRITICAL:'badge-red', WARNING:'badge-orange', ADVISORY:'badge-blue', INFO:'badge-grey' };
+  return `<span class="badge ${map[s]||'badge-grey'}">${s||'—'}</span>`;
+}
+function statusBadge(s) {
+  const map = { OPEN:'badge-blue', UNDER_REVIEW:'badge-orange', APPROVED:'badge-green', CLOSED:'badge-grey', COMPLETE:'badge-green', RUNNING:'badge-orange', FAILED:'badge-red' };
+  return `<span class="badge ${map[s]||'badge-grey'}">${s||'—'}</span>`;
+}
+function decisionBadge(d) {
+  return d === 'APPROVED' ? `<span class="badge badge-green">APPROVED</span>` : `<span class="badge badge-red">REJECTED</span>`;
+}
+function domainClass(s) { return (s||'').toLowerCase(); }
+
+// ═══════════════════════════════════════════════════════════════════════
+// RENDER ROUTER
+// ═══════════════════════════════════════════════════════════════════════
+function renderScreen(screen) {
+  const m = document.getElementById('main');
+  m.innerHTML = `<div class="spinner">Loading…</div>`;
+  ({
+    kpi:        renderKpi,
+    domain:     renderDomain,
+    exceptions: renderExceptions,
+    approvals:  renderApprovals,
+    tolerances: renderTolerances,
+    audit:      renderAudit,
+    chat:       renderChat,
+  }[screen] || renderKpi)();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// KPI DASHBOARD
+// ═══════════════════════════════════════════════════════════════════════
+async function renderKpi() {
+  try {
+    const runs = await od('/ReconciliationRuns?$orderby=startedAt desc&$top=20');
+    const excs = await od('/Exceptions?$top=500');
+
+    const latest = runs[0] || {};
+    const complete = runs.filter(r => r.status === 'COMPLETE');
+    const avgVar = complete.length ? (complete.reduce((s,r)=>s+Math.abs(parseFloat(r.overallVariancePct)||0),0)/complete.length) : 0;
+    const openExcs = excs.filter(e => e.status === 'OPEN' || e.status === 'UNDER_REVIEW');
+    const criticals = excs.filter(e => e.severity === 'CRITICAL');
+
+    const kpiHtml = `
+    <div class="kpi-row">
+      <div class="kpi-card ${Math.abs(parseFloat(latest.overallVariancePct))>0.001?'orange':'green'}">
+        <div class="kpi-label">Latest Variance</div>
+        <div class="kpi-value">${fmtPct(parseFloat(latest.overallVariancePct))}</div>
+        <div class="kpi-delta">Plant ${latest.plant||'—'} · ${latest.period||'—'}</div>
+      </div>
+      <div class="kpi-card ${openExcs.length>2?'orange':openExcs.length>0?'blue':'green'}">
+        <div class="kpi-label">Open Exceptions</div>
+        <div class="kpi-value">${openExcs.length}</div>
+        <div class="kpi-delta">${criticals.length} critical</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Avg Variance (last ${complete.length} runs)</div>
+        <div class="kpi-value">${(avgVar*100).toFixed(4)} %</div>
+        <div class="kpi-delta">Absolute average</div>
+      </div>
+      <div class="kpi-card ${(parseFloat(latest.dataCompleteness)||0)<100?'orange':'green'}">
+        <div class="kpi-label">Data Completeness</div>
+        <div class="kpi-value">${latest.dataCompleteness != null ? Number(latest.dataCompleteness).toFixed(1)+'%' : '—'}</div>
+        <div class="kpi-delta">Last run</div>
+      </div>
+    </div>`;
+
+    const tableRows = runs.map(r => `
+    <tr>
+      <td>${r.plant||'—'}</td>
+      <td>${r.period||'—'}</td>
+      <td>${statusBadge(r.status)}</td>
+      <td>${r.dataCompleteness != null ? Number(r.dataCompleteness).toFixed(1)+'%' : '—'}</td>
+      <td style="font-weight:600;color:${Math.abs(parseFloat(r.overallVariancePct))>0.001?'var(--sap-orange)':'var(--sap-green)'}">${fmtPct(parseFloat(r.overallVariancePct))}</td>
+      <td>${fmtNum(r.tanksReconciled)}</td>
+      <td>${fmtNum(r.exceptionCount)}</td>
+      <td>${fmtNum(r.pendingApprovals)}</td>
+      <td>${r.triggeredBy||'—'}</td>
+      <td>${fmtTs(r.startedAt)}</td>
+    </tr>`).join('');
+
+    document.getElementById('main').innerHTML = `
+    <div class="screen-title">KPI Dashboard</div>
+    <div class="screen-sub">Reconciliation run history and key performance indicators</div>
+    <div class="toolbar">
+      <div class="spacer"></div>
+      <button class="btn btn-primary" onclick="document.getElementById('run-modal-overlay').classList.remove('hidden')">▶ Trigger New Run</button>
+    </div>
+    ${kpiHtml}
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Plant</th><th>Period</th><th>Status</th><th>Completeness</th>
+          <th>Variance %</th><th>Tanks</th><th>Exceptions</th><th>Pending Appr.</th>
+          <th>Triggered By</th><th>Started</th>
+        </tr></thead>
+        <tbody>${tableRows || '<tr class="empty-row"><td colspan="10">No runs yet</td></tr>'}</tbody>
+      </table>
+    </div>`;
+  } catch(e) { document.getElementById('main').innerHTML = err(e); }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// DOMAIN STATUS
+// ═══════════════════════════════════════════════════════════════════════
+async function renderDomain() {
+  try {
+    const runs = await od('/ReconciliationRuns?$orderby=startedAt desc&$top=1&$expand=domainStatuses');
+    const latestRun = runs[0];
+    const domains = latestRun ? (latestRun.domainStatuses || []) : [];
+
+    const domainCards = domains.length ? domains.map(d => `
+    <div class="domain-card ${domainClass(d.status)}">
+      <div class="d-name">${d.domain}</div>
+      <div class="d-count">${fmtNum(d.recordCount)}</div>
+      <div class="d-status">${statusBadge(d.status)} · ${fmtTs(d.fetchedAt)}</div>
+    </div>`).join('') : '<p style="color:var(--text-light);padding:20px;">No domain data for latest run.</p>';
+
+    const allDomains = await od('/DomainStatuses?$orderby=fetchedAt desc&$top=50');
+    const tableRows = allDomains.map(d => `
+    <tr>
+      <td>${d.domain}</td>
+      <td>${fmtNum(d.recordCount)}</td>
+      <td>${statusBadge(d.status)}</td>
+      <td>${fmtTs(d.fetchedAt)}</td>
+      <td style="font-size:11px;color:var(--text-light)">${d.runId||''}</td>
+    </tr>`).join('');
+
+    document.getElementById('main').innerHTML = `
+    <div class="screen-title">Domain Status</div>
+    <div class="screen-sub">SAP IS-Oil &amp; Gas data domains — TANK · MAT · MOV · PHYS · BOOK</div>
+    <div style="margin-bottom:8px;font-size:13px;color:var(--text-light)">Latest run: <strong>${latestRun ? latestRun.plant+' / '+latestRun.period : '—'}</strong></div>
+    <div class="domain-grid">${domainCards}</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Domain</th><th>Records</th><th>Status</th><th>Fetched</th><th>Run ID</th></tr></thead>
+        <tbody>${tableRows || '<tr class="empty-row"><td colspan="5">No domain data</td></tr>'}</tbody>
+      </table>
+    </div>`;
+  } catch(e) { document.getElementById('main').innerHTML = err(e); }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// EXCEPTION REPORT
+// ═══════════════════════════════════════════════════════════════════════
+let exceptionData = [];
+async function renderExceptions(filter) {
+  try {
+    exceptionData = await od('/Exceptions?$orderby=createdAt desc&$top=500');
+    renderExceptionTable(filter || {});
+  } catch(e) { document.getElementById('main').innerHTML = err(e); }
+}
+
+function renderExceptionTable(filter) {
+  let rows = exceptionData;
+  if (filter.search) {
+    const q = filter.search.toLowerCase();
+    rows = rows.filter(r => (r.exceptionId+r.material+r.plant+r.rootCause+r.severity).toLowerCase().includes(q));
+  }
+  if (filter.severity && filter.severity !== 'ALL') rows = rows.filter(r => r.severity === filter.severity);
+  if (filter.status && filter.status !== 'ALL') rows = rows.filter(r => r.status === filter.status);
+
+  const tableRows = rows.map(r => `
+  <tr>
+    <td><strong>${r.exceptionId||'—'}</strong></td>
+    <td>${r.period||'—'}</td>
+    <td>${r.plant||'—'}</td>
+    <td>${r.storageLocation||'—'}</td>
+    <td>${r.material||'—'}</td>
+    <td style="font-weight:600">${r.varianceMT != null ? Number(r.varianceMT).toFixed(3) : '—'} MT</td>
+    <td>${fmtPct(parseFloat(r.variancePct))}</td>
+    <td>${severityBadge(r.severity)}</td>
+    <td style="font-size:11px">${r.rootCause||'—'}</td>
+    <td>${statusBadge(r.status)}</td>
+    <td>
+      ${r.status !== 'APPROVED' && r.status !== 'CLOSED' ? `
+        <button class="btn btn-success btn-sm" onclick="openApprove('${r.exceptionId}')">✓ Approve</button>
+        <button class="btn btn-danger btn-sm" onclick="openReject('${r.exceptionId}')">✗ Reject</button>
+      ` : ''}
+    </td>
+  </tr>`).join('');
+
+  document.getElementById('main').innerHTML = `
+  <div class="screen-title">Exception Report</div>
+  <div class="screen-sub">${rows.length} of ${exceptionData.length} exceptions shown</div>
+  <div class="toolbar">
+    <input type="text" id="exc-search" placeholder="Search ID, material, plant…" oninput="filterExceptions()"/>
+    <select id="exc-sev" onchange="filterExceptions()">
+      <option value="ALL">All Severities</option>
+      <option value="CRITICAL">CRITICAL</option>
+      <option value="WARNING">WARNING</option>
+      <option value="ADVISORY">ADVISORY</option>
+      <option value="INFO">INFO</option>
+    </select>
+    <select id="exc-status" onchange="filterExceptions()">
+      <option value="ALL">All Statuses</option>
+      <option value="OPEN">OPEN</option>
+      <option value="UNDER_REVIEW">UNDER REVIEW</option>
+      <option value="APPROVED">APPROVED</option>
+      <option value="CLOSED">CLOSED</option>
+    </select>
+    <div class="spacer"></div>
+    <button class="btn btn-ghost" onclick="renderExceptions()">↺ Refresh</button>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>Exception ID</th><th>Period</th><th>Plant</th><th>Loc</th><th>Material</th>
+        <th>Variance (MT)</th><th>Variance %</th><th>Severity</th><th>Root Cause</th><th>Status</th><th>Actions</th>
+      </tr></thead>
+      <tbody>${tableRows || '<tr class="empty-row"><td colspan="11">No exceptions found</td></tr>'}</tbody>
+    </table>
+  </div>`;
+}
+
+function filterExceptions() {
+  renderExceptionTable({
+    search:   document.getElementById('exc-search')?.value,
+    severity: document.getElementById('exc-sev')?.value,
+    status:   document.getElementById('exc-status')?.value
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// APPROVAL WORKFLOW
+// ═══════════════════════════════════════════════════════════════════════
+async function renderApprovals() {
+  try {
+    const rows = await od('/Approvals?$orderby=createdAt desc&$top=200');
+    const tableRows = rows.map(r => `
+    <tr>
+      <td><strong>${r.exceptionId||'—'}</strong></td>
+      <td>${r.period||'—'}</td>
+      <td>${r.plant||'—'}</td>
+      <td>${r.material||'—'}</td>
+      <td>${r.varianceMT != null ? Number(r.varianceMT).toFixed(3)+' MT' : '—'}</td>
+      <td>${severityBadge(r.severity)}</td>
+      <td style="font-size:11px;max-width:200px;white-space:normal">${(r.recommendation||'').substring(0,90)}…</td>
+      <td>${statusBadge(r.status)}</td>
+      <td>
+        <button class="btn btn-success btn-sm" onclick="openApprove('${r.exceptionId}')">✓ Approve</button>
+        <button class="btn btn-danger btn-sm" onclick="openReject('${r.exceptionId}')">✗ Reject</button>
+      </td>
+    </tr>`).join('');
+
+    document.getElementById('main').innerHTML = `
+    <div class="screen-title">Approval Workflow</div>
+    <div class="screen-sub">${rows.length} exceptions pending Plant Manager review</div>
+    <div class="toolbar">
+      <div class="spacer"></div>
+      <button class="btn btn-ghost" onclick="renderApprovals()">↺ Refresh</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Exception ID</th><th>Period</th><th>Plant</th><th>Material</th>
+          <th>Variance</th><th>Severity</th><th>Recommendation</th><th>Status</th><th>Actions</th>
+        </tr></thead>
+        <tbody>${tableRows || '<tr class="empty-row"><td colspan="9">No pending approvals</td></tr>'}</tbody>
+      </table>
+    </div>`;
+  } catch(e) { document.getElementById('main').innerHTML = err(e); }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// AUDIT TRAIL
+// ═══════════════════════════════════════════════════════════════════════
+async function renderAudit() {
+  try {
+    const rows = await od('/AuditLogs?$orderby=logTimestamp desc&$top=200');
+    const tableRows = rows.map(r => `
+    <tr>
+      <td>${fmtTs(r.logTimestamp)}</td>
+      <td><span class="badge badge-blue">${r.eventType||'—'}</span></td>
+      <td>${r.username||'—'}</td>
+      <td>${r.role||'—'}</td>
+      <td>${r.referenceId||'—'}</td>
+      <td style="font-size:12px;max-width:320px;white-space:normal;line-height:1.4">${r.details||'—'}</td>
+    </tr>`).join('');
+
+    document.getElementById('main').innerHTML = `
+    <div class="screen-title">Audit Trail</div>
+    <div class="screen-sub">Immutable event log — ${rows.length} entries (read-only)</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Timestamp</th><th>Event</th><th>User</th><th>Role</th><th>Reference</th><th>Details</th></tr></thead>
+        <tbody>${tableRows || '<tr class="empty-row"><td colspan="6">No audit entries</td></tr>'}</tbody>
+      </table>
+    </div>`;
+  } catch(e) { document.getElementById('main').innerHTML = err(e); }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// TOLERANCE CONFIG
+// ═══════════════════════════════════════════════════════════════════════
+async function renderTolerances() {
+  try {
+    const rows = await od('/ToleranceConfigs?$top=100');
+    const tableRows = rows.map(r => `
+    <tr>
+      <td>${r.plant||'—'}</td>
+      <td>${r.materialGroup||'—'}</td>
+      <td>${r.dailyTolerancePct != null ? (r.dailyTolerancePct*100).toFixed(4)+'%' : '—'}</td>
+      <td>${r.monthlyTolerancePct != null ? (r.monthlyTolerancePct*100).toFixed(4)+'%' : '—'}</td>
+      <td>${r.escalationAction||'—'}</td>
+    </tr>`).join('');
+
+    document.getElementById('main').innerHTML = `
+    <div class="screen-title">Tolerance Configuration</div>
+    <div class="screen-sub">Variance thresholds per plant and material group</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Plant</th><th>Material Group</th>
+          <th>Daily Tolerance</th><th>Monthly Tolerance</th><th>Escalation Action</th>
+        </tr></thead>
+        <tbody>${tableRows || '<tr class="empty-row"><td colspan="5">No tolerance configs</td></tr>'}</tbody>
+      </table>
+    </div>`;
+  } catch(e) { document.getElementById('main').innerHTML = err(e); }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// AI ASSISTANT CHAT
+// ═══════════════════════════════════════════════════════════════════════
+let chatHistory = [];
+let chatContextId = 'ctx-' + Date.now();
+
+async function renderChat() {
+  document.getElementById('main').innerHTML = `
+  <div class="screen-title">AI Assistant</div>
+  <div class="screen-sub">Mass Balance Reconciliation Agent — type a question below</div>
+  <div class="chat-wrap">
+    <div class="chat-messages" id="chat-msgs">
+      <div class="chat-msg agent">Hello! I'm the Mass Balance Reconciliation Agent.
+
+I can help you:
+• Run a mass balance reconciliation for a plant and period
+• Explain exceptions and variance causes
+• Check S/4HANA domain data (TANK, MAT, MOV, PHYS, BOOK)
+• Review approval workflows and audit events
+
+What would you like to know?</div>
+    </div>
+    <div class="chat-input-row">
+      <input type="text" id="chat-input" placeholder="Ask about plant 1000, exceptions, variances…" onkeydown="if(event.key==='Enter')sendChat()"/>
+      <button class="btn btn-primary" onclick="sendChat()">Send</button>
+      <button class="btn btn-ghost" onclick="clearChat()">Clear</button>
+    </div>
+  </div>`;
+
+  // Restore history
+  if (chatHistory.length) {
+    const box = document.getElementById('chat-msgs');
+    chatHistory.forEach(m => {
+      const d = document.createElement('div');
+      d.className = 'chat-msg ' + m.role;
+      d.textContent = m.text;
+      box.appendChild(d);
+    });
+    box.scrollTop = box.scrollHeight;
+  }
+}
+
+async function sendChat() {
+  const input = document.getElementById('chat-input');
+  if (!input) return;
+  const msg = input.value.trim();
+  if (!msg) return;
+  input.value = '';
+
+  const box = document.getElementById('chat-msgs');
+
+  const userDiv = document.createElement('div');
+  userDiv.className = 'chat-msg user';
+  userDiv.textContent = msg;
+  box.appendChild(userDiv);
+  chatHistory.push({ role: 'user', text: msg });
+
+  const thinkDiv = document.createElement('div');
+  thinkDiv.className = 'chat-msg thinking';
+  thinkDiv.textContent = 'Agent is thinking…';
+  box.appendChild(thinkDiv);
+  box.scrollTop = box.scrollHeight;
+
+  try {
+    const result = await odAction(null, null, 'sendAgentMessage', { message: msg, contextId: chatContextId });
+    thinkDiv.remove();
+    const replyText = typeof result === 'string' ? result : (result.value || JSON.stringify(result));
+    const agentDiv = document.createElement('div');
+    agentDiv.className = 'chat-msg agent';
+    agentDiv.textContent = replyText;
+    box.appendChild(agentDiv);
+    chatHistory.push({ role: 'agent', text: replyText });
+  } catch(e) {
+    thinkDiv.className = 'chat-msg agent';
+    thinkDiv.textContent = 'Error reaching agent: ' + e.message;
+    chatHistory.push({ role: 'agent', text: 'Error: ' + e.message });
+  }
+  box.scrollTop = box.scrollHeight;
+}
+
+function clearChat() {
+  chatHistory = [];
+  chatContextId = 'ctx-' + Date.now();
+  renderChat();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// APPROVAL MODAL
+// ═══════════════════════════════════════════════════════════════════════
+function openApprove(exceptionId) {
+  modalAction = 'approve'; modalExceptionId = exceptionId;
+  document.getElementById('modal-title').textContent = 'Approve Exception ' + exceptionId;
+  document.getElementById('m-comment-label').textContent = 'Comments';
+  document.getElementById('m-confirm').className = 'btn btn-success';
+  document.getElementById('m-confirm').textContent = '✓ Approve';
+  document.getElementById('m-name').value = '';
+  document.getElementById('m-role').value = '';
+  document.getElementById('m-comments').value = '';
+  document.getElementById('modal-overlay').classList.remove('hidden');
+}
+
+function openReject(exceptionId) {
+  modalAction = 'reject'; modalExceptionId = exceptionId;
+  document.getElementById('modal-title').textContent = 'Reject Exception ' + exceptionId;
+  document.getElementById('m-comment-label').textContent = 'Reason for Rejection';
+  document.getElementById('m-confirm').className = 'btn btn-danger';
+  document.getElementById('m-confirm').textContent = '✗ Reject';
+  document.getElementById('m-name').value = '';
+  document.getElementById('m-role').value = '';
+  document.getElementById('m-comments').value = '';
+  document.getElementById('modal-overlay').classList.remove('hidden');
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.add('hidden');
+}
+
+async function submitModal() {
+  const name = document.getElementById('m-name').value.trim();
+  const role = document.getElementById('m-role').value.trim();
+  const comments = document.getElementById('m-comments').value.trim();
+  if (!name || !role) { toast('Please enter your name and role', 'err'); return; }
+
+  closeModal();
+  try {
+    if (modalAction === 'approve') {
+      await odAction('Exceptions', modalExceptionId, 'approveCorrection', { approverName: name, approverRole: role, comments });
+      toast('Exception ' + modalExceptionId + ' approved', 'ok');
+    } else {
+      await odAction('Exceptions', modalExceptionId, 'rejectCorrection', { approverName: name, approverRole: role, reason: comments });
+      toast('Exception ' + modalExceptionId + ' rejected', 'ok');
+    }
+    if (currentScreen === 'exceptions') renderExceptions();
+    if (currentScreen === 'approvals') renderApprovals();
+  } catch(e) {
+    toast('Action failed: ' + e.message, 'err');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// TRIGGER RUN
+// ═══════════════════════════════════════════════════════════════════════
+async function submitRun() {
+  const plant  = document.getElementById('run-plant').value;
+  const period = document.getElementById('run-period').value.trim();
+  if (!period) { toast('Enter a period (YYYY-MM or YYYY-MM-DD)', 'err'); return; }
+  document.getElementById('run-modal-overlay').classList.add('hidden');
+  toast('Triggering run for plant ' + plant + ' period ' + period + '…');
+  try {
+    // Create a run record then call the action
+    const result = await odAction('ReconciliationRuns', null, 'triggerReconciliation', { plant, period, contextId: 'run-' + Date.now() });
+    toast('Run triggered — ' + (typeof result === 'string' ? result.substring(0,80) : 'started'), 'ok');
+    setTimeout(() => renderKpi(), 1500);
+  } catch(e) {
+    toast('Failed to trigger run: ' + e.message, 'err');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// ERROR HTML
+// ═══════════════════════════════════════════════════════════════════════
+function err(e) {
+  return `<div style="padding:40px;color:var(--sap-red);font-size:14px;">
+    <strong>Failed to load data</strong><br/>${e.message}
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════════════════════════════════════
+const initScreen = location.hash.slice(1) || 'kpi';
+navigate(initScreen);
+</script>
+</body>
+</html>

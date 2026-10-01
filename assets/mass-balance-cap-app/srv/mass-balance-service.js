@@ -286,6 +286,65 @@ module.exports = class MassBalanceService extends cds.ApplicationService {
             return agentReply || `Reconciliation run ${runId} ${runStatus}.`;
         });
 
+        // ── ACTION: triggerReconciliation (unbound — from UI "Trigger Run") ──────
+        // Delegates to the bound action handler above by constructing a fake run.
+
+        this.on('triggerReconciliation', async (req) => {
+            if (req.entity) return; // handled by bound handler above
+            const { plant, period, contextId } = req.data;
+            if (!plant || !period) return req.error(400, 'plant and period are required.');
+
+            const runId = cds.utils.uuid();
+            const startedAt = _now();
+            const username = req.user?.id || 'system';
+
+            await INSERT.into(ReconciliationRuns).entries({
+                ID: runId, plant, period, status: 'RUNNING',
+                triggeredBy: username, startedAt,
+                exceptionCount: 0, pendingApprovals: 0,
+                tanksReconciled: 0, dataCompleteness: 0, overallVariancePct: 0
+            });
+
+            await INSERT.into(AuditLogs).entries({
+                ID: cds.utils.uuid(), eventType: 'RUN_TRIGGERED',
+                username, role: 'MassBalance.Engineer', referenceId: runId,
+                details: `M1: Reconciliation run triggered for plant=${plant} period=${period}`,
+                logTimestamp: startedAt
+            });
+
+            let domainRows = [];
+            try {
+                const [year, month] = period.split('-');
+                const dateFrom = `${year}-${month}-01`;
+                const dateTo   = `${year}-${month}-${new Date(+year, +month, 0).getDate()}`;
+                domainRows = await fetchDomainStatuses(plant, dateFrom, dateTo, year);
+            } catch (e) { cds.log('s4').warn('Domain fetch failed:', e.message); }
+
+            for (const d of domainRows) {
+                await INSERT.into(DomainStatuses).entries({
+                    ID: cds.utils.uuid(), runId,
+                    domain: d.domain, recordCount: d.recordCount,
+                    fetchedAt: d.fetchedAt, status: d.status
+                });
+            }
+
+            const completeness = domainRows.length
+                ? Math.round((domainRows.filter(d=>d.status==='LIVE').length / domainRows.length) * 100) : 0;
+
+            let agentReply = '', runStatus = 'FAILED';
+            try {
+                agentReply = await agentTrigger(plant, period, contextId || `run-${runId}`, _getUserJwt(req));
+                runStatus = 'COMPLETE';
+            } catch (e) { agentReply = `Error: ${e.message}`; }
+
+            await UPDATE(ReconciliationRuns).set({
+                status: runStatus, dataCompleteness: completeness,
+                agentReply, completedAt: _now()
+            }).where({ ID: runId });
+
+            return agentReply || `Run ${runId} ${runStatus}.`;
+        });
+
         // ── ACTION: sendAgentMessage (Agent Chat panel) ───────────────────────
 
         this.on('sendAgentMessage', async (req) => {
