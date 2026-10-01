@@ -20,20 +20,5 @@
         "@sap/cds-dk"     : "^10",
         "@cap-js/sqlite"  : "^3",
         "jest"            : "^29"
-    },
-    "cds": {
-        "requires": {
-            "db": {
-                "[production]": { "kind": "hana" },
-                "[development]": {
-                    "kind"       : "sqlite",
-                    "credentials": { "url": ":memory:" }
-                }
-            },
-            "auth": {
-                "[production]": { "kind": "xsuaa" },
-                "[development]": { "kind": "dummy" }
-            }
-        }
     }
 }

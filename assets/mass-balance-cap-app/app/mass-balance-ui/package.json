@@ -1,0 +1,11 @@
+{
+    "name": "mass-balance-cap-app-approuter",
+    "version": "1.0.0",
+    "description": "Approuter for Mass Balance CAP App",
+    "scripts": {
+        "start": "node node_modules/@sap/approuter/approuter.js"
+    },
+    "dependencies": {
+        "@sap/approuter": "^16"
+    }
+}

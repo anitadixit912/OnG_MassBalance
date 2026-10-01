@@ -1,12 +1,14 @@
 {
     "requires": {
         "db": {
-            "[production]": { "kind": "hana" },
-            "[development]": { "kind": "sqlite", "credentials": { "url": ":memory:" } }
+            "[production]": { "kind": "sqlite", "credentials": { "url": "mass-balance.db" } },
+            "[development]": { "kind": "sqlite", "credentials": { "url": ":memory:" } },
+            "[docker]": { "kind": "sqlite", "credentials": { "url": "mass-balance.db" } }
         },
         "auth": {
             "[production]": { "kind": "xsuaa" },
-            "[development]": { "kind": "dummy" }
+            "[development]": { "kind": "dummy" },
+            "[docker]"     : { "kind": "dummy" }
         }
     },
     "server": {

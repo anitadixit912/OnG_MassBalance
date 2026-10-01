@@ -1,0 +1,22 @@
+services:
+
+  mass-balance-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "4004:4004"
+      - "8080:8080"
+    environment:
+      # Orchestrator
+      - AICORE_DEPLOYMENT_ID=${AICORE_DEPLOYMENT_ID}
+      - AICORE_DESTINATION_NAME=${AICORE_DESTINATION_NAME:-aicore}
+      - AICORE_RESOURCE_GROUP=${AICORE_RESOURCE_GROUP:-default}
+      - AGENT_PUBLIC_URL=http://localhost:8080
+      - LOG_LEVEL=INFO
+      # Set IBD_TESTING=1 for local demo without real AI Core credentials
+      # Set to 0 and provide AICORE_* vars to use real AI Core
+      - IBD_TESTING=${IBD_TESTING:-1}
+      # CAP app
+      - MASS_BALANCE_AGENT_URL=http://localhost:8080
+    restart: unless-stopped

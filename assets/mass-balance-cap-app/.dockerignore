@@ -1,0 +1,13 @@
+node_modules
+package-lock.json
+gen/
+dist/
+*.mtar
+mta_archives/
+.env
+*.db
+*.sqlite
+.git
+.gitignore
+mta.yaml
+docker-compose.yml

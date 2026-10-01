@@ -1,0 +1,91 @@
+{
+    "servers": {
+        "ogs_s4": {
+            "tools": {
+                "list_a_matlstkinacctmod_for_api_material_stock_srv": {
+                    "description": "Get material stock levels (TANK domain)",
+                    "input_schema": {
+                        "properties": {
+                            "Plant": {"type": "string", "description": "Plant code"},
+                            "top": {"type": "integer", "description": "Max records"}
+                        },
+                        "required": ["Plant"]
+                    },
+                    "mock_response": {
+                        "value": [
+                            {"Plant": "1000", "Material": "CRUDE-001", "StorageLocation": "TK-01", "MatlWrhsStkQtyInMatlBaseUnit": 15000.0, "MaterialBaseUnit": "MT"},
+                            {"Plant": "1000", "Material": "CRUDE-002", "StorageLocation": "TK-02", "MatlWrhsStkQtyInMatlBaseUnit": 8500.0, "MaterialBaseUnit": "MT"},
+                            {"Plant": "1000", "Material": "NAPHTHA-001", "StorageLocation": "TK-03", "MatlWrhsStkQtyInMatlBaseUnit": 3200.0, "MaterialBaseUnit": "MT"},
+                            {"Plant": "1000", "Material": "DIESEL-001", "StorageLocation": "TK-04", "MatlWrhsStkQtyInMatlBaseUnit": 5800.0, "MaterialBaseUnit": "MT"}
+                        ]
+                    }
+                },
+                "list_a_materialdocumentheader_for_api_material_document_srv": {
+                    "description": "Get material movements (MOV domain)",
+                    "input_schema": {
+                        "properties": {
+                            "Plant": {"type": "string", "description": "Plant code"},
+                            "PostingDate": {"type": "string", "description": "Posting date"},
+                            "top": {"type": "integer", "description": "Max records"}
+                        },
+                        "required": ["Plant"]
+                    },
+                    "mock_response": {
+                        "value": [
+                            {"MaterialDocument": "5000000001", "PostingDate": "2026-10-01", "Plant": "1000", "Material": "CRUDE-001", "GoodsMovementType": "101", "QuantityInBaseUnit": 2000.0},
+                            {"MaterialDocument": "5000000002", "PostingDate": "2026-10-01", "Plant": "1000", "Material": "CRUDE-002", "GoodsMovementType": "201", "QuantityInBaseUnit": 500.0},
+                            {"MaterialDocument": "5000000003", "PostingDate": "2026-10-01", "Plant": "1000", "Material": "NAPHTHA-001", "GoodsMovementType": "261", "QuantityInBaseUnit": 300.0},
+                            {"MaterialDocument": "5000000004", "PostingDate": "2026-10-01", "Plant": "1000", "Material": "DIESEL-001", "GoodsMovementType": "601", "QuantityInBaseUnit": 1200.0}
+                        ]
+                    }
+                },
+                "list_physicalinventorydocument_for_sap_self": {
+                    "description": "Get physical inventory (PHYS domain)",
+                    "input_schema": {
+                        "properties": {
+                            "Plant": {"type": "string", "description": "Plant code"},
+                            "FiscalYear": {"type": "string", "description": "Fiscal year"}
+                        },
+                        "required": ["Plant"]
+                    },
+                    "mock_response": {
+                        "value": [
+                            {"PhysicalInventoryDocument": "PI-001", "Plant": "1000", "StorageLocation": "TK-01", "BookQtyBfrCountInMatlBaseUnit": 15000.0, "Quantity": 14985.0},
+                            {"PhysicalInventoryDocument": "PI-002", "Plant": "1000", "StorageLocation": "TK-02", "BookQtyBfrCountInMatlBaseUnit": 8500.0, "Quantity": 8490.0}
+                        ]
+                    }
+                },
+                "list_procordconf2_for_api_proc_order_confirmation_2_srv": {
+                    "description": "Get process order confirmations (BOOK domain)",
+                    "input_schema": {
+                        "properties": {
+                            "Plant": {"type": "string", "description": "Plant code"},
+                            "PostingDate": {"type": "string", "description": "Posting date"}
+                        },
+                        "required": ["Plant"]
+                    },
+                    "mock_response": {
+                        "value": [
+                            {"OrderID": "1000001", "Material": "NAPHTHA-001", "Plant": "1000", "ConfirmationYieldQuantity": 280.0, "ConfirmationScrapQuantity": 5.0},
+                            {"OrderID": "1000002", "Material": "DIESEL-001", "Plant": "1000", "ConfirmationYieldQuantity": 1180.0, "ConfirmationScrapQuantity": 8.0}
+                        ]
+                    }
+                },
+                "list_stocktransportorder_for_sap_self": {
+                    "description": "Get stock transport orders (TRANSFERS domain)",
+                    "input_schema": {
+                        "properties": {
+                            "SupplyingPlant": {"type": "string", "description": "Supplying plant code"}
+                        },
+                        "required": ["SupplyingPlant"]
+                    },
+                    "mock_response": {
+                        "value": [
+                            {"StockTransportOrder": "STO-001", "SupplyingPlant": "1000", "Material": "CRUDE-001", "OrderQuantity": 500.0, "TransferStatus": "IN_TRANSIT"}
+                        ]
+                    }
+                }
+            }
+        }
+    }
+}

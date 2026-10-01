@@ -4,233 +4,64 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Mass Balance Reconciliation</title>
-    <script>
-        window["sap-ushell-config"] = {
-            defaultRenderer: "fiori2",
-            renderers: {
-                fiori2: {
-                    componentData: {
-                        config: {
-                            search: "hidden",
-                            appTitle: "Mass Balance Reconciliation",
-                            applications: {
-                                "Shell-home": {}
-                            }
-                        }
-                    }
-                }
-            },
-            services: {
-                LaunchPage: {
-                    adapter: {
-                        config: {
-                            groups: [{
-                                id: "mass_balance_group",
-                                title: "Mass Balance Reconciliation",
-                                isPreset: true,
-                                isVisible: true,
-                                isGroupLocked: false,
-                                tiles: [
-                                    {
-                                        id: "tile_dashboard",
-                                        tileType: "sap.ushell.ui.tile.StaticTile",
-                                        properties: {
-                                            title: "KPI Dashboard",
-                                            subtitle: "Runs, Variances & KPIs",
-                                            icon: "sap-icon://manager-insight",
-                                            targetURL: "#ReconciliationRuns-display"
-                                        }
-                                    },
-                                    {
-                                        id: "tile_exceptions",
-                                        tileType: "sap.ushell.ui.tile.StaticTile",
-                                        properties: {
-                                            title: "Exception Report",
-                                            subtitle: "All variance exceptions",
-                                            icon: "sap-icon://alert",
-                                            targetURL: "#Exceptions-display"
-                                        }
-                                    },
-                                    {
-                                        id: "tile_approvals",
-                                        tileType: "sap.ushell.ui.tile.StaticTile",
-                                        properties: {
-                                            title: "Approval Workflow",
-                                            subtitle: "Pending corrections",
-                                            icon: "sap-icon://approvals",
-                                            targetURL: "#Approvals-display"
-                                        }
-                                    },
-                                    {
-                                        id: "tile_audit",
-                                        tileType: "sap.ushell.ui.tile.StaticTile",
-                                        properties: {
-                                            title: "Audit Trail",
-                                            subtitle: "Immutable event log",
-                                            icon: "sap-icon://document-text",
-                                            targetURL: "#AuditLogs-display"
-                                        }
-                                    },
-                                    {
-                                        id: "tile_tolerance",
-                                        tileType: "sap.ushell.ui.tile.StaticTile",
-                                        properties: {
-                                            title: "Tolerance Config",
-                                            subtitle: "Thresholds per material group",
-                                            icon: "sap-icon://settings",
-                                            targetURL: "#ToleranceConfigs-display"
-                                        }
-                                    },
-                                    {
-                                        id: "tile_domains",
-                                        tileType: "sap.ushell.ui.tile.StaticTile",
-                                        properties: {
-                                            title: "Domain Status",
-                                            subtitle: "TANK · MAT · MOV · PHYS · BOOK",
-                                            icon: "sap-icon://database",
-                                            targetURL: "#DomainStatuses-display"
-                                        }
-                                    },
-                                    {
-                                        id: "tile_chat",
-                                        tileType: "sap.ushell.ui.tile.StaticTile",
-                                        properties: {
-                                            title: "AI Assistant",
-                                            subtitle: "Chat with the agent",
-                                            icon: "sap-icon://ai",
-                                            targetURL: "#AgentChat-display"
-                                        }
-                                    }
-                                ]
-                            }]
-                        }
-                    }
-                },
-                NavTargetResolution: {
-                    config: {
-                        allowTestUrlComponentConfig: true,
-                        enableClientSideTargetResolution: true
-                    }
-                },
-                ClientSideTargetResolution: {
-                    adapter: {
-                        config: {
-                            inbounds: {
-                                "ReconciliationRuns-display": {
-                                    semanticObject: "ReconciliationRuns",
-                                    action: "display",
-                                    title: "KPI Dashboard",
-                                    signature: { parameters: {}, additionalParameters: "allowed" },
-                                    resolutionResult: {
-                                        applicationType: "SAPUI5",
-                                        additionalInformation: "SAPUI5.Component=com.sap.mb.massbalanceui",
-                                        url: "./",
-                                        applicationDependencies: { manifest: true },
-                                        "sap.ui5": {
-                                            componentData: {
-                                                startupParameters: { "sap-ui-fl-max-layer": ["CUSTOMER"] }
-                                            }
-                                        },
-                                        innerAppRoute: "ReconciliationRuns"
-                                    }
-                                },
-                                "Exceptions-display": {
-                                    semanticObject: "Exceptions",
-                                    action: "display",
-                                    title: "Exception Report",
-                                    signature: { parameters: {}, additionalParameters: "allowed" },
-                                    resolutionResult: {
-                                        applicationType: "SAPUI5",
-                                        additionalInformation: "SAPUI5.Component=com.sap.mb.massbalanceui",
-                                        url: "./",
-                                        applicationDependencies: { manifest: true },
-                                        innerAppRoute: "Exceptions"
-                                    }
-                                },
-                                "Approvals-display": {
-                                    semanticObject: "Approvals",
-                                    action: "display",
-                                    title: "Approval Workflow",
-                                    signature: { parameters: {}, additionalParameters: "allowed" },
-                                    resolutionResult: {
-                                        applicationType: "SAPUI5",
-                                        additionalInformation: "SAPUI5.Component=com.sap.mb.massbalanceui",
-                                        url: "./",
-                                        applicationDependencies: { manifest: true },
-                                        innerAppRoute: "Approvals"
-                                    }
-                                },
-                                "AuditLogs-display": {
-                                    semanticObject: "AuditLogs",
-                                    action: "display",
-                                    title: "Audit Trail",
-                                    signature: { parameters: {}, additionalParameters: "allowed" },
-                                    resolutionResult: {
-                                        applicationType: "SAPUI5",
-                                        additionalInformation: "SAPUI5.Component=com.sap.mb.massbalanceui",
-                                        url: "./",
-                                        applicationDependencies: { manifest: true },
-                                        innerAppRoute: "AuditLog"
-                                    }
-                                },
-                                "ToleranceConfigs-display": {
-                                    semanticObject: "ToleranceConfigs",
-                                    action: "display",
-                                    title: "Tolerance Configuration",
-                                    signature: { parameters: {}, additionalParameters: "allowed" },
-                                    resolutionResult: {
-                                        applicationType: "SAPUI5",
-                                        additionalInformation: "SAPUI5.Component=com.sap.mb.massbalanceui",
-                                        url: "./",
-                                        applicationDependencies: { manifest: true },
-                                        innerAppRoute: "ToleranceConfig"
-                                    }
-                                },
-                                "DomainStatuses-display": {
-                                    semanticObject: "DomainStatuses",
-                                    action: "display",
-                                    title: "Domain Status",
-                                    signature: { parameters: {}, additionalParameters: "allowed" },
-                                    resolutionResult: {
-                                        applicationType: "SAPUI5",
-                                        additionalInformation: "SAPUI5.Component=com.sap.mb.massbalanceui",
-                                        url: "./",
-                                        applicationDependencies: { manifest: true },
-                                        innerAppRoute: "DomainStatus"
-                                    }
-                                },
-                                "AgentChat-display": {
-                                    semanticObject: "AgentChat",
-                                    action: "display",
-                                    title: "AI Assistant",
-                                    signature: { parameters: {}, additionalParameters: "allowed" },
-                                    resolutionResult: {
-                                        applicationType: "SAPUI5",
-                                        additionalInformation: "SAPUI5.Component=com.sap.mb.massbalanceui",
-                                        url: "./",
-                                        applicationDependencies: { manifest: true },
-                                        innerAppRoute: "AgentChat"
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        };
-    </script>
     <script id="sap-ui-bootstrap"
-        src="https://sapui5.hana.ondemand.com/1.120.0/resources/sap-ui-core.js"
+        src="https://sapui5.hana.ondemand.com/resources/sap-ui-core.js"
         data-sap-ui-theme="sap_horizon"
-        data-sap-ui-libs="sap.m,sap.ushell,sap.fe.templates,sap.fe.core,sap.ui.layout"
+        data-sap-ui-libs="sap.m,sap.ui.core,sap.ui.layout,sap.tnt"
         data-sap-ui-compatVersion="edge"
         data-sap-ui-async="true"
         data-sap-ui-frameOptions="allow"
-        data-sap-ui-resourceRoots='{"com.sap.mb.massbalanceui": "./"}'
-        data-sap-ui-onInit="module:sap/ushell/bootstrap/sandbox">
+        data-sap-ui-preload="async">
+    </script>
+    <script>
+        sap.ui.getCore().attachInit(function () {
+            sap.ui.require([
+                "sap/m/Shell",
+                "sap/m/App",
+                "sap/m/Page",
+                "sap/m/Bar",
+                "sap/m/Title",
+                "sap/m/GenericTile",
+                "sap/m/TileContent",
+                "sap/m/ImageContent",
+                "sap/ui/layout/cssgrid/CSSGrid"
+            ], function (Shell, App, Page, Bar, Title, GenericTile, TileContent, ImageContent, CSSGrid) {
+
+                var tiles = [
+                    { title: "KPI Dashboard",       subtitle: "Runs · Variances · KPIs",         icon: "sap-icon://manager-insight", url: "/$fiori-preview/MassBalanceService/ReconciliationRuns" },
+                    { title: "Exception Report",    subtitle: "All variance exceptions",          icon: "sap-icon://alert",            url: "/$fiori-preview/MassBalanceService/Exceptions" },
+                    { title: "Approval Workflow",   subtitle: "Pending corrections",             icon: "sap-icon://approvals",        url: "/$fiori-preview/MassBalanceService/Approvals" },
+                    { title: "Audit Trail",         subtitle: "Immutable event log",             icon: "sap-icon://document-text",    url: "/$fiori-preview/MassBalanceService/AuditLogs" },
+                    { title: "Tolerance Config",    subtitle: "Thresholds per material group",   icon: "sap-icon://settings",         url: "/$fiori-preview/MassBalanceService/ToleranceConfigs" },
+                    { title: "Domain Status",       subtitle: "TANK · MAT · MOV · PHYS · BOOK", icon: "sap-icon://database",         url: "/$fiori-preview/MassBalanceService/DomainStatuses" },
+                    { title: "AI Assistant",        subtitle: "Chat with the agent",             icon: "sap-icon://ai",               url: "/$fiori-preview/MassBalanceService/ReconciliationRuns" }
+                ];
+
+                var aTiles = tiles.map(function (t) {
+                    return new GenericTile({
+                        header: t.title,
+                        subheader: t.subtitle,
+                        press: function () { window.open(t.url, "_blank"); },
+                        tileContent: new TileContent({
+                            content: new ImageContent({ src: t.icon })
+                        })
+                    });
+                });
+
+                var oPage = new Page({
+                    showHeader: true,
+                    customHeader: new Bar({
+                        contentMiddle: new Title({ text: "Mass Balance Reconciliation", level: "H2" })
+                    }),
+                    content: aTiles
+                });
+
+                new Shell({
+                    app: new App({ pages: oPage })
+                }).placeAt("content");
+            });
+        });
     </script>
 </head>
-<body class="sapUiBody" id="content">
-    <div id="canvas"></div>
-</body>
+<body class="sapUiBody" id="content"></body>
 </html>
