@@ -4,6 +4,8 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Mass Balance Reconciliation</title>
+<script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
 <style>
   :root {
     --sidebar-w: 220px;
@@ -31,28 +33,28 @@
   /* ── HEADER ───────────────────────────────────────────────────────── */
   header {
     position: fixed; top: 0; left: 0; right: 0; height: var(--hdr-h);
-    background: var(--sap-blue); color: #fff;
+    background: #1d2d3e; color: #fff;
     display: flex; align-items: center; gap: 12px; padding: 0 20px;
-    z-index: 100; box-shadow: 0 2px 6px rgba(0,0,0,.18);
+    z-index: 100; box-shadow: 0 2px 6px rgba(0,0,0,.28);
   }
-  header .logo { font-size: 18px; font-weight: 700; letter-spacing: .5px; flex: 1; }
+  header .logo { font-size: 18px; font-weight: 700; letter-spacing: .5px; flex: 1; text-align: center; color: #f0c040; }
   header .sub  { font-size: 12px; opacity: .8; }
   header .user { font-size: 13px; background: rgba(255,255,255,.2); border-radius: 16px; padding: 4px 12px; }
 
   /* ── SIDEBAR ──────────────────────────────────────────────────────── */
   nav {
     position: fixed; top: var(--hdr-h); left: 0; bottom: 0;
-    width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border);
+    width: var(--sidebar-w); background: #1d2d3e; border-right: 1px solid #0d1b2a;
     overflow-y: auto; z-index: 90;
   }
-  nav .nav-section { padding: 14px 16px 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--text-light); letter-spacing: .8px; }
+  nav .nav-section { padding: 14px 16px 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; color: #f0c040; letter-spacing: .8px; }
   nav a {
     display: flex; align-items: center; gap: 10px; padding: 10px 18px;
-    text-decoration: none; color: var(--text); font-size: 13.5px; transition: background .15s;
+    text-decoration: none; color: #c8d8e8; font-size: 13.5px; transition: background .15s;
     cursor: pointer; border-left: 3px solid transparent;
   }
-  nav a:hover { background: #eaf2fb; }
-  nav a.active { background: #e8f2ff; border-left-color: var(--sap-blue); color: var(--sap-blue); font-weight: 600; }
+  nav a:hover { background: #263d54; }
+  nav a.active { background: #0d3a6e; border-left-color: #4da3ff; color: #ffffff; font-weight: 600; }
   nav a .ico { width: 18px; text-align: center; font-size: 15px; }
 
   /* ── MAIN CONTENT ─────────────────────────────────────────────────── */
@@ -68,9 +70,9 @@
   /* ── KPI CARDS ────────────────────────────────────────────────────── */
   .kpi-row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
   .kpi-card {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    background: var(--surface); border: 1px solid #a0aab4; border-radius: 8px;
     padding: 18px 24px; min-width: 170px; flex: 1;
-    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    box-shadow: 0 1px 4px rgba(0,0,0,.12);
   }
   .kpi-card .kpi-label { font-size: 11px; text-transform: uppercase; color: var(--text-light); letter-spacing: .5px; margin-bottom: 8px; }
   .kpi-card .kpi-value { font-size: 28px; font-weight: 700; color: var(--sap-blue); }
@@ -106,13 +108,16 @@
   .btn-success { background: var(--sap-green); color: #fff; border-color: var(--sap-green); }
   .btn-sm { padding: 4px 10px; font-size: 12px; }
 
-  .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: auto; box-shadow: 0 1px 3px rgba(0,0,0,.05); }
+  .table-wrap { background: var(--surface); border: 1px solid #a0aab4; border-radius: 8px; overflow: auto; box-shadow: 0 1px 4px rgba(0,0,0,.10); }
   table { border-collapse: collapse; width: 100%; font-size: 13px; }
-  thead th { background: #f0f2f5; padding: 10px 14px; text-align: left; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .4px; border-bottom: 1px solid var(--border); white-space: nowrap; }
-  tbody td { padding: 10px 14px; border-bottom: 1px solid #f0f2f5; vertical-align: middle; }
+  thead th { background: #f0f2f5; padding: 10px 14px; text-align: left; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .4px; border-bottom: 2px solid #a0aab4; border-right: 1px solid #c8cdd2; white-space: nowrap; }
+  thead th:last-child { border-right: none; }
+  tbody td { padding: 10px 14px; border-bottom: 1px solid #d0d5da; border-right: 1px solid #e4e7ea; vertical-align: middle; }
+  tbody td:last-child { border-right: none; }
   tbody tr:last-child td { border-bottom: none; }
   tbody tr:hover { background: #f8fafc; }
   tbody tr.selected { background: #e8f2ff; }
+  tbody tr.domain-row-highlight { background: #fff8d6; outline: 2px solid #f0c040; }
   .empty-row td { text-align: center; padding: 40px; color: var(--text-light); font-style: italic; }
 
   /* ── BADGES ───────────────────────────────────────────────────────── */
@@ -128,8 +133,8 @@
 
   /* ── DETAIL PANEL ─────────────────────────────────────────────────── */
   .detail-panel {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
-    padding: 24px; margin-top: 20px; box-shadow: 0 1px 3px rgba(0,0,0,.05);
+    background: var(--surface); border: 1px solid #a0aab4; border-radius: 8px;
+    padding: 24px; margin-top: 20px; box-shadow: 0 1px 4px rgba(0,0,0,.10);
   }
   .detail-panel h3 { font-size: 16px; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
   .detail-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
@@ -160,36 +165,56 @@
   .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
 
   /* ── AI CHAT ──────────────────────────────────────────────────────── */
-  .chat-wrap { display: flex; flex-direction: column; height: calc(100vh - var(--hdr-h) - 120px); }
-  .chat-messages {
-    flex: 1; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px;
-    padding: 16px; background: #f9fafb; display: flex; flex-direction: column; gap: 12px;
-  }
-  .chat-msg { max-width: 80%; padding: 10px 14px; border-radius: 10px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
-  .chat-msg.user { align-self: flex-end; background: var(--sap-blue); color: #fff; border-bottom-right-radius: 2px; }
-  .chat-msg.agent { align-self: flex-start; background: #fff; border: 1px solid var(--border); color: var(--text); border-bottom-left-radius: 2px; }
-  .chat-msg.thinking { align-self: flex-start; color: var(--text-light); font-style: italic; font-size: 13px; }
-  .chat-input-row { display: flex; gap: 10px; margin-top: 12px; }
-  .chat-input-row input {
-    flex: 1; border: 1px solid var(--border); border-radius: 6px;
-    padding: 10px 14px; font-size: 14px;
-  }
-  .chat-input-row input:focus { outline: none; border-color: var(--sap-blue); }
+  .chat-outer { display: flex; flex-direction: column; height: calc(100vh - var(--hdr-h) - 60px); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+  .chat-hdr { background: #003366; color: #fff; padding: 10px 18px; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .chat-hdr h2 { font-size: 14px; font-weight: 600; flex: 1; }
+  .chat-hdr .badge { font-size: 11px; background: #0070d2; padding: 2px 8px; border-radius: 12px; }
+  .chat-samples { background: #eef4fb; border-bottom: 1px solid #c8ddf5; padding: 8px 16px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; flex-shrink: 0; }
+  .chat-samples label { font-size: 11px; color: #555; white-space: nowrap; }
+  .chat-sample-btn { padding: 4px 12px; background: #fff; border: 1px solid #0070d2; border-radius: 16px; color: #0070d2; font-size: 11px; cursor: pointer; white-space: nowrap; }
+  .chat-sample-btn:hover { background: #0070d2; color: #fff; }
+  .chat-clear-btn { padding: 4px 12px; background: #fff; border: 1px solid #aaa; border-radius: 16px; color: #888; font-size: 11px; cursor: pointer; margin-left: auto; }
+  .chat-clear-btn:hover { background: #f5f5f5; color: #555; }
+  .chat-msgs { flex: 1; overflow-y: auto; padding: 14px 18px; background: #f9fafb; display: flex; flex-direction: column; gap: 12px; }
+  .cmsg { max-width: 82%; padding: 11px 15px; border-radius: 8px; font-size: 13.5px; line-height: 1.6; word-break: break-word; }
+  .cmsg.user    { align-self: flex-end; background: #0070d2; color: #fff; white-space: pre-wrap; }
+  .cmsg.agent   { align-self: flex-start; background: #fff; border: 1px solid #ddd; color: #222; }
+  .cmsg.error   { align-self: flex-start; background: #fff0f0; border: 1px solid #fcc; color: #c00; }
+  .cmsg.thinking{ align-self: flex-start; background: #f5f5f5; border: 1px dashed #ccc; color: #888; font-style: italic; }
+  /* Markdown inside agent messages */
+  .cmsg.agent h1,.cmsg.agent h2,.cmsg.agent h3 { margin: 10px 0 5px; font-weight: 700; }
+  .cmsg.agent h1 { font-size: 1.15em; border-bottom: 1px solid #eee; padding-bottom: 3px; }
+  .cmsg.agent h2 { font-size: 1.03em; }
+  .cmsg.agent h3 { font-size: 0.95em; }
+  .cmsg.agent p  { margin: 5px 0; }
+  .cmsg.agent ul,.cmsg.agent ol { margin: 5px 0 5px 18px; }
+  .cmsg.agent li { margin: 2px 0; }
+  .cmsg.agent strong { font-weight: 700; }
+  .cmsg.agent code { background: #f4f4f4; border: 1px solid #ddd; border-radius: 3px; padding: 1px 5px; font-family: monospace; font-size: 0.88em; }
+  .cmsg.agent pre  { background: #f4f4f4; border: 1px solid #ddd; border-radius: 4px; padding: 8px; overflow-x: auto; margin: 6px 0; }
+  .cmsg.agent pre code { background: none; border: none; padding: 0; }
+  .cmsg.agent table { border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 0.87em; }
+  .cmsg.agent th { background: #003366; color: #fff; padding: 5px 9px; text-align: left; }
+  .cmsg.agent td { border: 1px solid #ddd; padding: 4px 9px; }
+  .cmsg.agent tr:nth-child(even) td { background: #f9f9f9; }
+  .cmsg.agent blockquote { border-left: 3px solid #0070d2; margin: 6px 0; padding: 3px 10px; color: #555; background: #f5f8ff; }
+  .chat-input-bar { background: #fff; border-top: 1px solid #ddd; padding: 10px 16px; display: flex; gap: 10px; flex-shrink: 0; }
+  .chat-input-bar textarea { flex: 1; padding: 9px 12px; border: 1px solid #ccc; border-radius: 6px; resize: none; font-size: 13px; font-family: inherit; height: 56px; }
+  .chat-input-bar textarea:focus { outline: none; border-color: #0070d2; }
+  .chat-input-bar button { padding: 0 18px; background: #003366; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; }
+  .chat-input-bar button:disabled { background: #999; cursor: not-allowed; }
 
-  /* ── SAMPLE PROMPTS ───────────────────────────────────────────────── */
-  .sample-prompts { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
-  .sample-btn {
-    background: #f0f4ff; border: 1px solid #c0d4f5; border-radius: 16px;
-    padding: 5px 14px; font-size: 12px; color: var(--sap-teal);
-    cursor: pointer; transition: .15s;
-  }
-  .sample-btn:hover { background: #daeaff; border-color: var(--sap-blue); }
+  /* ── CLICKABLE TILES ──────────────────────────────────────────────── */
+  .kpi-card { cursor: pointer; transition: box-shadow .15s, transform .1s; }
+  .kpi-card:hover { box-shadow: 0 4px 14px rgba(0,112,242,.18); transform: translateY(-2px); }
+  .domain-card { cursor: pointer; transition: box-shadow .15s, transform .1s; }
+  .domain-card:hover { box-shadow: 0 4px 14px rgba(0,112,242,.18); transform: translateY(-2px); }
 
   /* ── DOMAIN STATUS GRID ───────────────────────────────────────────── */
   .domain-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; margin-bottom: 20px; }
   .domain-card {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
-    padding: 16px 20px; box-shadow: 0 1px 3px rgba(0,0,0,.05);
+    background: var(--surface); border: 1px solid #a0aab4; border-radius: 8px;
+    padding: 16px 20px; box-shadow: 0 1px 4px rgba(0,0,0,.12);
   }
   .domain-card .d-name { font-size: 13px; font-weight: 700; letter-spacing: .5px; margin-bottom: 6px; }
   .domain-card .d-count { font-size: 26px; font-weight: 700; }
@@ -420,25 +445,25 @@ async function renderKpi() {
 
     const kpiHtml = `
     <div class="kpi-row">
-      <div class="kpi-card ${Math.abs(parseFloat(latest.overallVariancePct))>0.001?'orange':'green'}">
+      <div class="kpi-card ${Math.abs(parseFloat(latest.overallVariancePct))>0.001?'orange':'green'}" onclick="document.querySelector('.table-wrap').scrollIntoView({behavior:'smooth'})" title="Click to see run history below">
         <div class="kpi-label">Latest Variance</div>
         <div class="kpi-value">${fmtPct(parseFloat(latest.overallVariancePct))}</div>
-        <div class="kpi-delta">Plant ${latest.plant||'—'} · ${latest.period||'—'}</div>
+        <div class="kpi-delta">Plant ${latest.plant||'—'} · ${latest.period||'—'} · click for run history ↓</div>
       </div>
-      <div class="kpi-card ${openExcs.length>2?'orange':openExcs.length>0?'blue':'green'}">
+      <div class="kpi-card ${openExcs.length>2?'orange':openExcs.length>0?'blue':'green'}" onclick="navigate('exceptions')" title="Click to view open exceptions">
         <div class="kpi-label">Open Exceptions</div>
         <div class="kpi-value">${openExcs.length}</div>
-        <div class="kpi-delta">${criticals.length} critical</div>
+        <div class="kpi-delta">${criticals.length} critical · click to view ↗</div>
       </div>
-      <div class="kpi-card">
+      <div class="kpi-card" onclick="document.querySelector('.table-wrap').scrollIntoView({behavior:'smooth'})" title="Click to see completed runs below">
         <div class="kpi-label">Avg Variance (last ${complete.length} runs)</div>
         <div class="kpi-value">${(avgVar*100).toFixed(4)} %</div>
-        <div class="kpi-delta">Absolute average</div>
+        <div class="kpi-delta">Absolute average · click for run history ↓</div>
       </div>
-      <div class="kpi-card ${(parseFloat(latest.dataCompleteness)||0)<100?'orange':'green'}">
+      <div class="kpi-card ${(parseFloat(latest.dataCompleteness)||0)<100?'orange':'green'}" onclick="navigate('domain')" title="Click to view domain status">
         <div class="kpi-label">Data Completeness</div>
         <div class="kpi-value">${latest.dataCompleteness != null ? Number(latest.dataCompleteness).toFixed(1)+'%' : '—'}</div>
-        <div class="kpi-delta">Last run</div>
+        <div class="kpi-delta">Last run · click for domain detail ↗</div>
       </div>
     </div>`;
 
@@ -487,21 +512,21 @@ async function renderDomain() {
     const domains = latestRun ? (latestRun.domainStatuses || []) : [];
 
     const domainCards = domains.length ? domains.map(d => `
-    <div class="domain-card ${domainClass(d.status)}">
+    <div class="domain-card ${domainClass(d.status)}" onclick="highlightDomainRow('${d.domain}')" title="Click to highlight in table">
       <div class="d-name">${d.domain}</div>
       <div class="d-count">${fmtNum(d.recordCount)}</div>
       <div class="d-status">${statusBadge(d.status)} · ${fmtTs(d.fetchedAt)}</div>
     </div>`).join('') : '<p style="color:var(--text-light);padding:20px;">No domain data for latest run.</p>';
 
-    const allDomains = await od('/DomainStatuses?$orderby=fetchedAt desc&$top=50');
-    const tableRows = allDomains.map(d => `
-    <tr>
-      <td>${d.domain}</td>
+    // Table shows only the latest run's domains — same data as the tiles
+    const tableRows = domains.length ? domains.map(d => `
+    <tr id="domain-row-${d.domain}">
+      <td><strong>${d.domain}</strong></td>
       <td>${fmtNum(d.recordCount)}</td>
       <td>${statusBadge(d.status)}</td>
       <td>${fmtTs(d.fetchedAt)}</td>
-      <td style="font-size:11px;color:var(--text-light)">${d.runId||''}</td>
-    </tr>`).join('');
+      <td style="font-size:11px;color:var(--text-light)">${latestRun.plant||'—'} / ${latestRun.period||'—'}</td>
+    </tr>`).join('') : '';
 
     document.getElementById('main').innerHTML = `
     <div class="screen-title">Domain Status</div>
@@ -510,8 +535,8 @@ async function renderDomain() {
     <div class="domain-grid">${domainCards}</div>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Domain</th><th>Records</th><th>Status</th><th>Fetched</th><th>Run ID</th></tr></thead>
-        <tbody>${tableRows || '<tr class="empty-row"><td colspan="5">No domain data</td></tr>'}</tbody>
+        <thead><tr><th>Domain</th><th>Records</th><th>Status</th><th>Fetched At</th><th>Plant / Period</th></tr></thead>
+        <tbody>${tableRows || '<tr class="empty-row"><td colspan="5">No domain data — trigger a run first</td></tr>'}</tbody>
       </table>
     </div>`;
   } catch(e) { document.getElementById('main').innerHTML = err(e); }
@@ -521,13 +546,6 @@ async function renderDomain() {
 // EXCEPTION REPORT
 // ═══════════════════════════════════════════════════════════════════════
 let exceptionData = [];
-async function renderExceptions(filter) {
-  try {
-    exceptionData = await od('/Exceptions?$orderby=createdAt desc&$top=500');
-    renderExceptionTable(filter || {});
-  } catch(e) { document.getElementById('main').innerHTML = err(e); }
-}
-
 function renderExceptionTable(filter) {
   let rows = exceptionData;
   if (filter.search) {
@@ -557,9 +575,20 @@ function renderExceptionTable(filter) {
     </td>
   </tr>`).join('');
 
-  document.getElementById('main').innerHTML = `
+  // Update only the subtitle and tbody — never touch the toolbar so inputs keep focus
+  const sub = document.querySelector('#exc-screen-sub');
+  if (sub) sub.textContent = `${rows.length} of ${exceptionData.length} exceptions shown`;
+  const tbody = document.querySelector('#exc-tbody');
+  if (tbody) tbody.innerHTML = tableRows || '<tr class="empty-row"><td colspan="11">No exceptions found</td></tr>';
+}
+
+async function renderExceptions() {
+  try {
+    exceptionData = await od('/Exceptions?$orderby=createdAt desc&$top=500');
+
+    document.getElementById('main').innerHTML = `
   <div class="screen-title">Exception Report</div>
-  <div class="screen-sub">${rows.length} of ${exceptionData.length} exceptions shown</div>
+  <div class="screen-sub" id="exc-screen-sub">${exceptionData.length} exceptions shown</div>
   <div class="toolbar">
     <input type="text" id="exc-search" placeholder="Search ID, material, plant…" oninput="filterExceptions()"/>
     <select id="exc-sev" onchange="filterExceptions()">
@@ -585,16 +614,19 @@ function renderExceptionTable(filter) {
         <th>Exception ID</th><th>Period</th><th>Plant</th><th>Loc</th><th>Material</th>
         <th>Variance (MT)</th><th>Variance %</th><th>Severity</th><th>Root Cause</th><th>Status</th><th>Actions</th>
       </tr></thead>
-      <tbody>${tableRows || '<tr class="empty-row"><td colspan="11">No exceptions found</td></tr>'}</tbody>
+      <tbody id="exc-tbody"></tbody>
     </table>
   </div>`;
+
+    renderExceptionTable({});
+  } catch(e) { document.getElementById('main').innerHTML = err(e); }
 }
 
 function filterExceptions() {
   renderExceptionTable({
-    search:   document.getElementById('exc-search')?.value,
-    severity: document.getElementById('exc-sev')?.value,
-    status:   document.getElementById('exc-status')?.value
+    search:   document.getElementById('exc-search')?.value || '',
+    severity: document.getElementById('exc-sev')?.value || 'ALL',
+    status:   document.getElementById('exc-status')?.value || 'ALL'
   });
 }
 
@@ -698,44 +730,42 @@ async function renderTolerances() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// AI ASSISTANT CHAT
+// AI ASSISTANT — full chat UI matching standalone agent look & feel
 // ═══════════════════════════════════════════════════════════════════════
 let chatHistory = [];
-let chatContextId = 'ctx-' + Date.now();
+let chatContextId = 'ctx-' + Math.random().toString(36).slice(2, 10);
 
-async function renderChat() {
+if (typeof marked !== 'undefined') marked.setOptions({ breaks: true, gfm: true });
+
+function renderChat() {
   const samples = [
-    'Run mass balance for plant 1000 period 2026-09',
-    'Explain the CRITICAL exception for CRUDE01',
-    'What approvals are pending?',
-    'Show stock data for plant 1000',
-    'What are the tolerance thresholds?',
+    'Run daily mass balance for plant 1000 for today',
+    'Show all CRITICAL exceptions for this month',
+    'What is the closing stock for CRUDE01 in plant 1000?',
+    'List all pending approval corrections',
+    'Explain the variance classification rules',
     'Summarise the latest reconciliation run',
   ];
 
   document.getElementById('main').innerHTML = `
-  <div class="screen-title">AI Assistant</div>
-  <div class="screen-sub">Mass Balance Reconciliation Agent — ask anything about your data</div>
-  <div class="sample-prompts">
-    ${samples.map(s => `<button class="sample-btn" onclick="useSample(this)">${s}</button>`).join('')}
-  </div>
-  <div class="chat-wrap">
-    <div class="chat-messages" id="chat-msgs">
-      <div class="chat-msg agent">Hello! I am the <strong>Mass Balance Reconciliation Agent</strong>.
-
-I can help you:
-• Run a reconciliation for a plant and period
-• Explain exceptions, variances and root causes
-• Check S/4HANA domain data (TANK, MAT, MOV, PHYS, BOOK)
-• Review pending approvals and audit events
-• Show tolerance thresholds
-
-Click a suggestion above or type your question below.</div>
+  <div class="chat-outer">
+    <div class="chat-hdr">
+      <h2>&#9878;&#65039; Mass Balance Reconciliation Agent</h2>
+      <span class="badge">OGS/IS-Oil AI</span>
     </div>
-    <div class="chat-input-row">
-      <input type="text" id="chat-input" placeholder="e.g. Run mass balance for plant 1000 period 2026-09" onkeydown="if(event.key==='Enter')sendChat()"/>
-      <button class="btn btn-primary" onclick="sendChat()">Send</button>
-      <button class="btn btn-ghost" onclick="clearChat()">Clear</button>
+    <div class="chat-samples">
+      <label>Try:</label>
+      ${samples.map(s => `<button class="chat-sample-btn" onclick="chatAsk(${JSON.stringify(s)})">${s}</button>`).join('')}
+      <button class="chat-clear-btn" onclick="clearChat()">&#128465; Clear</button>
+    </div>
+    <div class="chat-msgs" id="chat-msgs">
+      <div class="cmsg agent">Hello! I am the <strong>Mass Balance Reconciliation Agent</strong>.<br><br>
+I automate the hydrocarbon mass balance reconciliation cycle — pulling live data from SAP IS-Oil &amp; Gas (OGS_S4), validating, calculating variances, and raising exceptions for your approval.<br><br>
+Click a sample question above or type your own below.</div>
+    </div>
+    <div class="chat-input-bar">
+      <textarea id="chat-input" placeholder="Ask the agent to run mass balance, show exceptions, approve corrections…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"></textarea>
+      <button id="chat-send-btn" onclick="sendChat()">Send</button>
     </div>
   </div>`;
 
@@ -744,37 +774,45 @@ Click a suggestion above or type your question below.</div>
     const box = document.getElementById('chat-msgs');
     chatHistory.forEach(m => {
       const d = document.createElement('div');
-      d.className = 'chat-msg ' + m.role;
-      d.textContent = m.text;
+      d.className = 'cmsg ' + m.role;
+      if (m.role === 'agent') {
+        d.innerHTML = typeof DOMPurify !== 'undefined' && typeof marked !== 'undefined'
+          ? DOMPurify.sanitize(marked.parse(m.text))
+          : m.text;
+      } else {
+        d.textContent = m.text;
+      }
       box.appendChild(d);
     });
     box.scrollTop = box.scrollHeight;
   }
 }
 
-function useSample(btn) {
-  const input = document.getElementById('chat-input');
-  if (input) { input.value = btn.textContent; input.focus(); }
+function chatAsk(text) {
+  const inp = document.getElementById('chat-input');
+  if (inp) { inp.value = text; sendChat(); }
 }
 
 async function sendChat() {
-  const input = document.getElementById('chat-input');
-  if (!input) return;
-  const msg = input.value.trim();
+  const inp = document.getElementById('chat-input');
+  const btn = document.getElementById('chat-send-btn');
+  if (!inp) return;
+  const msg = inp.value.trim();
   if (!msg) return;
-  input.value = '';
+  inp.value = '';
+  if (btn) btn.disabled = true;
 
   const box = document.getElementById('chat-msgs');
 
   const userDiv = document.createElement('div');
-  userDiv.className = 'chat-msg user';
+  userDiv.className = 'cmsg user';
   userDiv.textContent = msg;
   box.appendChild(userDiv);
   chatHistory.push({ role: 'user', text: msg });
 
   const thinkDiv = document.createElement('div');
-  thinkDiv.className = 'chat-msg thinking';
-  thinkDiv.textContent = 'Agent is thinking…';
+  thinkDiv.className = 'cmsg thinking';
+  thinkDiv.textContent = '⏳ Processing…';
   box.appendChild(thinkDiv);
   box.scrollTop = box.scrollHeight;
 
@@ -783,21 +821,25 @@ async function sendChat() {
     thinkDiv.remove();
     const replyText = typeof result === 'string' ? result : (result.value || JSON.stringify(result));
     const agentDiv = document.createElement('div');
-    agentDiv.className = 'chat-msg agent';
-    agentDiv.textContent = replyText;
+    agentDiv.className = 'cmsg agent';
+    agentDiv.innerHTML = typeof DOMPurify !== 'undefined' && typeof marked !== 'undefined'
+      ? DOMPurify.sanitize(marked.parse(replyText))
+      : replyText;
     box.appendChild(agentDiv);
     chatHistory.push({ role: 'agent', text: replyText });
   } catch(e) {
-    thinkDiv.className = 'chat-msg agent';
-    thinkDiv.textContent = 'Error reaching agent: ' + e.message;
+    thinkDiv.className = 'cmsg error';
+    thinkDiv.textContent = '❌ Error: ' + e.message;
     chatHistory.push({ role: 'agent', text: 'Error: ' + e.message });
   }
   box.scrollTop = box.scrollHeight;
+  if (btn) btn.disabled = false;
+  if (inp) inp.focus();
 }
 
 function clearChat() {
   chatHistory = [];
-  chatContextId = 'ctx-' + Date.now();
+  chatContextId = 'ctx-' + Math.random().toString(36).slice(2, 10);
   renderChat();
 }
 
@@ -870,6 +912,19 @@ async function submitRun() {
     setTimeout(() => renderKpi(), 1500);
   } catch(e) {
     toast('Failed to trigger run: ' + e.message, 'err');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// DOMAIN CARD CLICK — highlight matching table row
+// ═══════════════════════════════════════════════════════════════════════
+function highlightDomainRow(domain) {
+  // Clear any previous highlight
+  document.querySelectorAll('.domain-row-highlight').forEach(r => r.classList.remove('domain-row-highlight'));
+  const row = document.getElementById('domain-row-' + domain);
+  if (row) {
+    row.classList.add('domain-row-highlight');
+    row.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 }
 

@@ -2,6 +2,17 @@
 
 const { resolveDestination } = require('./dest-client');
 
+// ── IBD_TESTING mock data ────────────────────────────────────────────────────
+const IBD_MOCK_DOMAINS = [
+    { domain: 'TANK',      recordCount: 24, status: 'LIVE' },
+    { domain: 'MOV',       recordCount: 342, status: 'LIVE' },
+    { domain: 'PHYS',      recordCount: 12, status: 'LIVE' },
+    { domain: 'BOOK',      recordCount: 4,  status: 'LIVE' },
+    { domain: 'TRANSFERS', recordCount: 1,  status: 'LIVE' },
+];
+
+function isMock() { return process.env.IBD_TESTING === '1'; }
+
 // All S/4HANA OData calls go through the OGS_S4 BTP Destination,
 // configured in proj-vector-destination-service (same as the agents).
 async function _resolveOgsS4() {
@@ -103,6 +114,9 @@ async function getStockTransportOrders(plant, dateFrom, dateTo) {
  * @returns {Promise<Array<{domain, recordCount, status}>>}
  */
 async function fetchDomainStatuses(plant, dateFrom, dateTo, fiscalYear) {
+    if (isMock()) {
+        return IBD_MOCK_DOMAINS.map(d => ({ ...d, fetchedAt: new Date().toISOString() }));
+    }
     const results = await Promise.allSettled([
         getMaterialStock(plant),
         getMaterialDocuments(plant, dateFrom, dateTo),
