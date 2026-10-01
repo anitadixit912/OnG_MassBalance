@@ -176,6 +176,15 @@
   }
   .chat-input-row input:focus { outline: none; border-color: var(--sap-blue); }
 
+  /* ── SAMPLE PROMPTS ───────────────────────────────────────────────── */
+  .sample-prompts { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  .sample-btn {
+    background: #f0f4ff; border: 1px solid #c0d4f5; border-radius: 16px;
+    padding: 5px 14px; font-size: 12px; color: var(--sap-teal);
+    cursor: pointer; transition: .15s;
+  }
+  .sample-btn:hover { background: #daeaff; border-color: var(--sap-blue); }
+
   /* ── DOMAIN STATUS GRID ───────────────────────────────────────────── */
   .domain-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; margin-bottom: 20px; }
   .domain-card {
@@ -695,23 +704,36 @@ let chatHistory = [];
 let chatContextId = 'ctx-' + Date.now();
 
 async function renderChat() {
+  const samples = [
+    'Run mass balance for plant 1000 period 2026-09',
+    'Explain the CRITICAL exception for CRUDE01',
+    'What approvals are pending?',
+    'Show stock data for plant 1000',
+    'What are the tolerance thresholds?',
+    'Summarise the latest reconciliation run',
+  ];
+
   document.getElementById('main').innerHTML = `
   <div class="screen-title">AI Assistant</div>
-  <div class="screen-sub">Mass Balance Reconciliation Agent — type a question below</div>
+  <div class="screen-sub">Mass Balance Reconciliation Agent — ask anything about your data</div>
+  <div class="sample-prompts">
+    ${samples.map(s => `<button class="sample-btn" onclick="useSample(this)">${s}</button>`).join('')}
+  </div>
   <div class="chat-wrap">
     <div class="chat-messages" id="chat-msgs">
-      <div class="chat-msg agent">Hello! I'm the Mass Balance Reconciliation Agent.
+      <div class="chat-msg agent">Hello! I am the <strong>Mass Balance Reconciliation Agent</strong>.
 
 I can help you:
-• Run a mass balance reconciliation for a plant and period
-• Explain exceptions and variance causes
+• Run a reconciliation for a plant and period
+• Explain exceptions, variances and root causes
 • Check S/4HANA domain data (TANK, MAT, MOV, PHYS, BOOK)
-• Review approval workflows and audit events
+• Review pending approvals and audit events
+• Show tolerance thresholds
 
-What would you like to know?</div>
+Click a suggestion above or type your question below.</div>
     </div>
     <div class="chat-input-row">
-      <input type="text" id="chat-input" placeholder="Ask about plant 1000, exceptions, variances…" onkeydown="if(event.key==='Enter')sendChat()"/>
+      <input type="text" id="chat-input" placeholder="e.g. Run mass balance for plant 1000 period 2026-09" onkeydown="if(event.key==='Enter')sendChat()"/>
       <button class="btn btn-primary" onclick="sendChat()">Send</button>
       <button class="btn btn-ghost" onclick="clearChat()">Clear</button>
     </div>
@@ -728,6 +750,11 @@ What would you like to know?</div>
     });
     box.scrollTop = box.scrollHeight;
   }
+}
+
+function useSample(btn) {
+  const input = document.getElementById('chat-input');
+  if (input) { input.value = btn.textContent; input.focus(); }
 }
 
 async function sendChat() {

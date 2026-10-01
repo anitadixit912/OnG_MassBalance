@@ -46,8 +46,11 @@ async function sendAgentMessage(message, contextId, userJwt) {
     const data = await res.json();
     if (data.error) throw new Error(`Agent error: ${JSON.stringify(data.error)}`);
 
-    const artifacts = data?.result?.artifacts || [];
-    return artifacts[0]?.parts?.[0]?.text || JSON.stringify(data?.result ?? data);
+    const result = data?.result ?? data;
+    // A2A response: text lives in result.status.message.parts OR result.artifacts[].parts
+    const fromStatus = result?.status?.message?.parts?.[0]?.text;
+    const fromArtifacts = result?.artifacts?.[0]?.parts?.[0]?.text;
+    return fromStatus || fromArtifacts || JSON.stringify(result);
 }
 
 /**

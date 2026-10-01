@@ -175,8 +175,101 @@ class SampleAgent:
         if last: raise last
         return await self._graph(self._model_chain[0][1], tools, system_prompt).ainvoke(msgs, cfg)
 
+    def _mock_response(self, query: str) -> str:
+        """Return a canned but meaningful response when IBD_TESTING=1 (no LLM available)."""
+        q = query.lower()
+        if any(w in q for w in ["run", "reconcil", "plant", "period", "trigger"]):
+            return (
+                "**Mass Balance Reconciliation — Demo Run (IBD_TESTING mode)**\n\n"
+                "**Plant 1000 · Period 2026-09**\n\n"
+                "**Step 1 — Data Collection:** ✅ All 5 domains collected\n"
+                "- TANK: 24 records (4 storage locations)\n"
+                "- MAT: 8 material master records\n"
+                "- MOV: 342 material documents\n"
+                "- PHYS: 12 physical inventory records\n"
+                "- BOOK: 4 process order confirmations\n\n"
+                "**Step 2 — Validation:** ✅ PASS — Data completeness 100%\n\n"
+                "**Step 3 — Calculation:**\n"
+                "- Overall refinery variance: **-0.08%** (within monthly tolerance of 0.08%)\n"
+                "- Tank T001 (CRUDE01): -18.5 MT / -1.85% ⚠ CRITICAL — exceeds threshold\n"
+                "- Tank T003 (GASOIL01): +6.2 MT / +0.62% ⚠ WARNING — in-transit STO\n"
+                "- Tank T005 (NAPHTHA01): -2.1 MT / -0.21% ℹ ADVISORY — within evaporation range\n\n"
+                "**Step 4 — Exception Classification:** 3 exceptions raised\n"
+                "- EXC-2026-09-0001: CRITICAL · Root cause: Measurement/Calibration (MC)\n"
+                "- EXC-2026-09-0002: WARNING · Root cause: In-Transit Transfer (TF)\n"
+                "- EXC-2026-09-0003: ADVISORY · Root cause: Process Loss (PL)\n\n"
+                "**Step 5 — Approval Gate:**\n"
+                "EXC-2026-09-0001 requires Plant Manager approval before MI07 correction is posted.\n"
+                "Please use the **Approval Workflow** screen to approve or reject."
+            )
+        if any(w in q for w in ["exception", "variance", "exc-"]):
+            return (
+                "**Exception Summary — Plant 1000**\n\n"
+                "There are currently **3 open exceptions** for period 2026-09:\n\n"
+                "1. **EXC-2026-09-0001** — CRITICAL — Tank T001 CRUDE01\n"
+                "   Variance: -18.5 MT (-1.85%). Root cause: Measurement/Calibration.\n"
+                "   Action: Recalibrate dip gauge, repost MI07. Awaiting approval.\n\n"
+                "2. **EXC-2026-09-0002** — WARNING — Tank T003 GASOIL01\n"
+                "   Variance: +6.2 MT (+0.62%). Root cause: In-transit stock transfer.\n"
+                "   Action: Confirm receipt at plant 2000. Under review.\n\n"
+                "3. **EXC-2026-09-0003** — ADVISORY — Tank T005 NAPHTHA01\n"
+                "   Variance: -2.1 MT (-0.21%). Root cause: Evaporation loss.\n"
+                "   Action: Monitor next 3 days. Within tolerance for light distillates."
+            )
+        if any(w in q for w in ["approv", "reject", "workflow", "pending"]):
+            return (
+                "**Approval Workflow Status**\n\n"
+                "**Pending approvals:** 2\n\n"
+                "- EXC-2026-09-0001 (CRITICAL): Awaiting Plant Manager sign-off for MI07 gauge correction\n"
+                "- EXC-2026-09-0002 (WARNING): Under review — awaiting transit confirmation from plant 2000\n\n"
+                "Use the **Approval Workflow** screen to approve or reject these exceptions.\n"
+                "No SAP correction document will be posted without your explicit approval."
+            )
+        if any(w in q for w in ["tank", "domain", "s4", "s/4", "data", "stock"]):
+            return (
+                "**S/4HANA Domain Status — Plant 1000 (Mock Data)**\n\n"
+                "- **TANK** (Material Stock): 4 materials across 4 tanks\n"
+                "  CRUDE01: 15,000 MT · CRUDE02: 8,500 MT · NAPHTHA01: 3,200 MT · DIESEL01: 5,800 MT\n\n"
+                "- **MOV** (Material Documents): 4 postings (GR 101, GI 201/261/601)\n\n"
+                "- **PHYS** (Physical Inventory): 2 documents — book vs count delta tracked\n\n"
+                "- **BOOK** (Process Orders): 2 confirmations — NAPHTHA01 yield 280 MT, DIESEL01 yield 1,180 MT\n\n"
+                "- **TRANSFERS** (Stock Transport Orders): 1 STO in transit — 500 MT CRUDE01 to plant 2000\n\n"
+                "All domains: **LIVE** status. Data fetched at run start."
+            )
+        if any(w in q for w in ["tolerance", "threshold", "config"]):
+            return (
+                "**Tolerance Configuration — Plant 1000**\n\n"
+                "| Material Group       | Daily Tolerance | Monthly Tolerance | Escalation |\n"
+                "|----------------------|-----------------|-------------------|------------|\n"
+                "| Crude / Residual     | 0.15%           | 0.08%             | Plant manager review |\n"
+                "| Light Distillates    | 0.10%           | 0.05%             | Operations review |\n"
+                "| Finished Products    | 0.12%           | 0.06%             | Quality + ops |\n"
+                "| Specialty / Blends   | 0.08%           | 0.04%             | Blending supervisor |\n\n"
+                "Update tolerances in the **Tolerance Config** screen (Engineer role required)."
+            )
+        # Generic help response
+        return (
+            "Hello! I am the **Mass Balance Reconciliation Agent**.\n\n"
+            "I can help you with:\n"
+            "- **Run a reconciliation**: 'Run mass balance for plant 1000 period 2026-09'\n"
+            "- **Explain exceptions**: 'Explain the CRITICAL exception for CRUDE01'\n"
+            "- **Check domain data**: 'What is the stock data for plant 1000?'\n"
+            "- **Approval status**: 'What approvals are pending?'\n"
+            "- **Tolerance config**: 'Show tolerance thresholds for plant 1000'\n\n"
+            "*Note: Running in IBD_TESTING demo mode — responses use mock S/4HANA data.*\n"
+            "*For live data, connect real AI Core credentials.*"
+        )
+
     async def stream(self, query: str, context_id: str, tools=None) -> AsyncGenerator[dict, None]:
         yield {"is_task_complete": False, "require_user_input": False, "content": "Starting mass balance reconciliation pipeline..."}
+
+        # IBD_TESTING=1: skip LLM entirely, return canned analysis from mock data
+        if os.environ.get("IBD_TESTING") == "1":
+            response = self._mock_response(query)
+            needs_approval = "approval" in response.lower() and "approval workflow" in response.lower()
+            yield {"is_task_complete": not needs_approval, "require_user_input": needs_approval, "content": response}
+            return
+
         try:
             extra = [SystemMessage(content="No sub-agent tools available.")] if not tools else []
             result = await self._invoke_with_fallback(tools=tools or [], system_prompt=get_system_prompt(), query=query, context_id=context_id, extra_messages=extra or None)
