@@ -4,8 +4,8 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Mass Balance Reconciliation</title>
-<script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
+<script src="/app/marked.min.js"></script>
+<script src="/app/purify.min.js"></script>
 <style>
   :root {
     --sidebar-w: 220px;
@@ -165,44 +165,46 @@
   .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
 
   /* ── AI CHAT ──────────────────────────────────────────────────────── */
-  .chat-outer { display: flex; flex-direction: column; height: calc(100vh - var(--hdr-h) - 60px); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
-  .chat-hdr { background: #003366; color: #fff; padding: 10px 18px; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
-  .chat-hdr h2 { font-size: 14px; font-weight: 600; flex: 1; }
-  .chat-hdr .badge { font-size: 11px; background: #0070d2; padding: 2px 8px; border-radius: 12px; }
-  .chat-samples { background: #eef4fb; border-bottom: 1px solid #c8ddf5; padding: 8px 16px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; flex-shrink: 0; }
-  .chat-samples label { font-size: 11px; color: #555; white-space: nowrap; }
-  .chat-sample-btn { padding: 4px 12px; background: #fff; border: 1px solid #0070d2; border-radius: 16px; color: #0070d2; font-size: 11px; cursor: pointer; white-space: nowrap; }
-  .chat-sample-btn:hover { background: #0070d2; color: #fff; }
-  .chat-clear-btn { padding: 4px 12px; background: #fff; border: 1px solid #aaa; border-radius: 16px; color: #888; font-size: 11px; cursor: pointer; margin-left: auto; }
-  .chat-clear-btn:hover { background: #f5f5f5; color: #555; }
-  .chat-msgs { flex: 1; overflow-y: auto; padding: 14px 18px; background: #f9fafb; display: flex; flex-direction: column; gap: 12px; }
-  .cmsg { max-width: 82%; padding: 11px 15px; border-radius: 8px; font-size: 13.5px; line-height: 1.6; word-break: break-word; }
-  .cmsg.user    { align-self: flex-end; background: #0070d2; color: #fff; white-space: pre-wrap; }
-  .cmsg.agent   { align-self: flex-start; background: #fff; border: 1px solid #ddd; color: #222; }
-  .cmsg.error   { align-self: flex-start; background: #fff0f0; border: 1px solid #fcc; color: #c00; }
-  .cmsg.thinking{ align-self: flex-start; background: #f5f5f5; border: 1px dashed #ccc; color: #888; font-style: italic; }
-  /* Markdown inside agent messages */
-  .cmsg.agent h1,.cmsg.agent h2,.cmsg.agent h3 { margin: 10px 0 5px; font-weight: 700; }
-  .cmsg.agent h1 { font-size: 1.15em; border-bottom: 1px solid #eee; padding-bottom: 3px; }
-  .cmsg.agent h2 { font-size: 1.03em; }
-  .cmsg.agent h3 { font-size: 0.95em; }
-  .cmsg.agent p  { margin: 5px 0; }
-  .cmsg.agent ul,.cmsg.agent ol { margin: 5px 0 5px 18px; }
-  .cmsg.agent li { margin: 2px 0; }
-  .cmsg.agent strong { font-weight: 700; }
-  .cmsg.agent code { background: #f4f4f4; border: 1px solid #ddd; border-radius: 3px; padding: 1px 5px; font-family: monospace; font-size: 0.88em; }
-  .cmsg.agent pre  { background: #f4f4f4; border: 1px solid #ddd; border-radius: 4px; padding: 8px; overflow-x: auto; margin: 6px 0; }
-  .cmsg.agent pre code { background: none; border: none; padding: 0; }
-  .cmsg.agent table { border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 0.87em; }
-  .cmsg.agent th { background: #003366; color: #fff; padding: 5px 9px; text-align: left; }
-  .cmsg.agent td { border: 1px solid #ddd; padding: 4px 9px; }
-  .cmsg.agent tr:nth-child(even) td { background: #f9f9f9; }
-  .cmsg.agent blockquote { border-left: 3px solid #0070d2; margin: 6px 0; padding: 3px 10px; color: #555; background: #f5f8ff; }
-  .chat-input-bar { background: #fff; border-top: 1px solid #ddd; padding: 10px 16px; display: flex; gap: 10px; flex-shrink: 0; }
-  .chat-input-bar textarea { flex: 1; padding: 9px 12px; border: 1px solid #ccc; border-radius: 6px; resize: none; font-size: 13px; font-family: inherit; height: 56px; }
-  .chat-input-bar textarea:focus { outline: none; border-color: #0070d2; }
-  .chat-input-bar button { padding: 0 18px; background: #003366; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; }
-  .chat-input-bar button:disabled { background: #999; cursor: not-allowed; }
+  .chat-wrap { display: flex; flex-direction: column; height: calc(100vh - var(--hdr-h) - 120px); }
+  .chat-messages {
+    flex: 1; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px;
+    padding: 16px; background: #f9fafb; display: flex; flex-direction: column; gap: 12px;
+  }
+  .chat-msg { max-width: 80%; padding: 10px 14px; border-radius: 10px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
+  .chat-msg.user { align-self: flex-end; background: var(--sap-blue); color: #fff; border-bottom-right-radius: 2px; }
+  .chat-msg.agent { align-self: flex-start; background: #fff; border: 1px solid var(--border); color: var(--text); border-bottom-left-radius: 2px; }
+  .chat-msg.thinking { align-self: flex-start; color: var(--text-light); font-style: italic; font-size: 13px; }
+  /* Markdown rendering inside agent messages */
+  .chat-msg.agent h1,.chat-msg.agent h2,.chat-msg.agent h3 { margin: 8px 0 4px; font-weight: 700; }
+  .chat-msg.agent h1 { font-size: 1.1em; border-bottom: 1px solid #eee; padding-bottom: 3px; }
+  .chat-msg.agent h2 { font-size: 1.0em; }
+  .chat-msg.agent h3 { font-size: 0.95em; }
+  .chat-msg.agent p  { margin: 5px 0; }
+  .chat-msg.agent ul,.chat-msg.agent ol { margin: 5px 0 5px 18px; }
+  .chat-msg.agent li { margin: 2px 0; }
+  .chat-msg.agent strong { font-weight: 700; }
+  .chat-msg.agent em { font-style: italic; }
+  .chat-msg.agent code { background: #f4f4f4; border: 1px solid #ddd; border-radius: 3px; padding: 1px 5px; font-family: monospace; font-size: 0.88em; }
+  .chat-msg.agent table { border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 0.88em; }
+  .chat-msg.agent th { background: #1d2d3e; color: #fff; padding: 6px 10px; text-align: left; }
+  .chat-msg.agent td { border: 1px solid #d0d5da; padding: 5px 10px; }
+  .chat-msg.agent tr:nth-child(even) td { background: #f9fafb; }
+  .chat-msg.agent blockquote { border-left: 3px solid var(--sap-blue); margin: 6px 0; padding: 3px 10px; color: #555; background: #f5f8ff; }
+  .chat-input-row { display: flex; gap: 10px; margin-top: 12px; }
+  .chat-input-row input {
+    flex: 1; border: 1px solid var(--border); border-radius: 6px;
+    padding: 10px 14px; font-size: 14px;
+  }
+  .chat-input-row input:focus { outline: none; border-color: var(--sap-blue); }
+
+  /* ── SAMPLE PROMPTS ───────────────────────────────────────────────── */
+  .sample-prompts { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  .sample-btn {
+    background: #f0f4ff; border: 1px solid #c0d4f5; border-radius: 16px;
+    padding: 5px 14px; font-size: 12px; color: var(--sap-teal);
+    cursor: pointer; transition: .15s;
+  }
+  .sample-btn:hover { background: #daeaff; border-color: var(--sap-blue); }
 
   /* ── CLICKABLE TILES ──────────────────────────────────────────────── */
   .kpi-card { cursor: pointer; transition: box-shadow .15s, transform .1s; }
@@ -358,7 +360,7 @@ window.addEventListener('hashchange', () => {
 // OData FETCH HELPER
 // ═══════════════════════════════════════════════════════════════════════
 async function od(path) {
-  const r = await fetch(BASE + path, { headers: { Accept: 'application/json' } });
+  const r = await fetch(BASE + path, { headers: { Accept: 'application/json', 'ngrok-skip-browser-warning': '1' } });
   if (!r.ok) throw new Error(r.status + ' ' + r.statusText);
   const j = await r.json();
   return j.value !== undefined ? j.value : j;
@@ -370,7 +372,7 @@ async function odAction(entitySet, key, action, body) {
     : BASE + '/' + action;
   const r = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'ngrok-skip-browser-warning': '1' },
     body: JSON.stringify(body)
   });
   if (!r.ok) {
@@ -730,55 +732,54 @@ async function renderTolerances() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// AI ASSISTANT — full chat UI matching standalone agent look & feel
+// AI ASSISTANT CHAT
 // ═══════════════════════════════════════════════════════════════════════
 let chatHistory = [];
-let chatContextId = 'ctx-' + Math.random().toString(36).slice(2, 10);
+let chatContextId = 'ctx-' + Date.now();
 
-if (typeof marked !== 'undefined') marked.setOptions({ breaks: true, gfm: true });
-
-function renderChat() {
+async function renderChat() {
   const samples = [
-    'Run daily mass balance for plant 1000 for today',
-    'Show all CRITICAL exceptions for this month',
-    'What is the closing stock for CRUDE01 in plant 1000?',
-    'List all pending approval corrections',
-    'Explain the variance classification rules',
+    'Run mass balance for plant 1000 period 2026-09',
+    'Explain the CRITICAL exception for CRUDE01',
+    'What approvals are pending?',
+    'Show stock data for plant 1000',
+    'What are the tolerance thresholds?',
     'Summarise the latest reconciliation run',
   ];
 
   document.getElementById('main').innerHTML = `
-  <div class="chat-outer">
-    <div class="chat-hdr">
-      <h2>&#9878;&#65039; Mass Balance Reconciliation Agent</h2>
-      <span class="badge">OGS/IS-Oil AI</span>
+  <div class="screen-title">AI Assistant</div>
+  <div class="screen-sub">Mass Balance Reconciliation Agent — ask anything about your data</div>
+  <div class="sample-prompts">
+    ${samples.map(s => `<button class="sample-btn" onclick="useSample(this)">${s}</button>`).join('')}
+  </div>
+  <div class="chat-wrap">
+    <div class="chat-messages" id="chat-msgs">
+      <div class="chat-msg agent">Hello! I am the <strong>Mass Balance Reconciliation Agent</strong>.
+
+I can help you:
+• Run a reconciliation for a plant and period
+• Explain exceptions, variances and root causes
+• Check S/4HANA domain data (TANK, MAT, MOV, PHYS, BOOK)
+• Review pending approvals and audit events
+• Show tolerance thresholds
+
+Click a suggestion above or type your question below.</div>
     </div>
-    <div class="chat-samples">
-      <label>Try:</label>
-      ${samples.map(s => `<button class="chat-sample-btn" onclick="chatAsk(${JSON.stringify(s)})">${s}</button>`).join('')}
-      <button class="chat-clear-btn" onclick="clearChat()">&#128465; Clear</button>
-    </div>
-    <div class="chat-msgs" id="chat-msgs">
-      <div class="cmsg agent">Hello! I am the <strong>Mass Balance Reconciliation Agent</strong>.<br><br>
-I automate the hydrocarbon mass balance reconciliation cycle — pulling live data from SAP IS-Oil &amp; Gas (OGS_S4), validating, calculating variances, and raising exceptions for your approval.<br><br>
-Click a sample question above or type your own below.</div>
-    </div>
-    <div class="chat-input-bar">
-      <textarea id="chat-input" placeholder="Ask the agent to run mass balance, show exceptions, approve corrections…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"></textarea>
-      <button id="chat-send-btn" onclick="sendChat()">Send</button>
+    <div class="chat-input-row">
+      <input type="text" id="chat-input" placeholder="e.g. Run mass balance for plant 1000 period 2026-09" onkeydown="if(event.key==='Enter')sendChat()"/>
+      <button class="btn btn-primary" onclick="sendChat()">Send</button>
+      <button class="btn btn-ghost" onclick="clearChat()">Clear</button>
     </div>
   </div>`;
 
-  // Restore history
   if (chatHistory.length) {
     const box = document.getElementById('chat-msgs');
     chatHistory.forEach(m => {
       const d = document.createElement('div');
-      d.className = 'cmsg ' + m.role;
-      if (m.role === 'agent') {
-        d.innerHTML = typeof DOMPurify !== 'undefined' && typeof marked !== 'undefined'
-          ? DOMPurify.sanitize(marked.parse(m.text))
-          : m.text;
+      d.className = 'chat-msg ' + m.role;
+      if (m.role === 'agent' && typeof marked !== 'undefined' && typeof DOMPurify !== 'undefined') {
+        d.innerHTML = DOMPurify.sanitize(marked.parse(m.text));
       } else {
         d.textContent = m.text;
       }
@@ -788,31 +789,29 @@ Click a sample question above or type your own below.</div>
   }
 }
 
-function chatAsk(text) {
-  const inp = document.getElementById('chat-input');
-  if (inp) { inp.value = text; sendChat(); }
+function useSample(btn) {
+  const input = document.getElementById('chat-input');
+  if (input) { input.value = btn.textContent; input.focus(); }
 }
 
 async function sendChat() {
-  const inp = document.getElementById('chat-input');
-  const btn = document.getElementById('chat-send-btn');
-  if (!inp) return;
-  const msg = inp.value.trim();
+  const input = document.getElementById('chat-input');
+  if (!input) return;
+  const msg = input.value.trim();
   if (!msg) return;
-  inp.value = '';
-  if (btn) btn.disabled = true;
+  input.value = '';
 
   const box = document.getElementById('chat-msgs');
 
   const userDiv = document.createElement('div');
-  userDiv.className = 'cmsg user';
+  userDiv.className = 'chat-msg user';
   userDiv.textContent = msg;
   box.appendChild(userDiv);
   chatHistory.push({ role: 'user', text: msg });
 
   const thinkDiv = document.createElement('div');
-  thinkDiv.className = 'cmsg thinking';
-  thinkDiv.textContent = '⏳ Processing…';
+  thinkDiv.className = 'chat-msg thinking';
+  thinkDiv.textContent = 'Agent is thinking…';
   box.appendChild(thinkDiv);
   box.scrollTop = box.scrollHeight;
 
@@ -821,25 +820,25 @@ async function sendChat() {
     thinkDiv.remove();
     const replyText = typeof result === 'string' ? result : (result.value || JSON.stringify(result));
     const agentDiv = document.createElement('div');
-    agentDiv.className = 'cmsg agent';
-    agentDiv.innerHTML = typeof DOMPurify !== 'undefined' && typeof marked !== 'undefined'
-      ? DOMPurify.sanitize(marked.parse(replyText))
-      : replyText;
+    agentDiv.className = 'chat-msg agent';
+    if (typeof marked !== 'undefined' && typeof DOMPurify !== 'undefined') {
+      agentDiv.innerHTML = DOMPurify.sanitize(marked.parse(replyText));
+    } else {
+      agentDiv.textContent = replyText;
+    }
     box.appendChild(agentDiv);
     chatHistory.push({ role: 'agent', text: replyText });
   } catch(e) {
-    thinkDiv.className = 'cmsg error';
-    thinkDiv.textContent = '❌ Error: ' + e.message;
+    thinkDiv.className = 'chat-msg agent';
+    thinkDiv.textContent = 'Error reaching agent: ' + e.message;
     chatHistory.push({ role: 'agent', text: 'Error: ' + e.message });
   }
   box.scrollTop = box.scrollHeight;
-  if (btn) btn.disabled = false;
-  if (inp) inp.focus();
 }
 
 function clearChat() {
   chatHistory = [];
-  chatContextId = 'ctx-' + Math.random().toString(36).slice(2, 10);
+  chatContextId = 'ctx-' + Date.now();
   renderChat();
 }
 
