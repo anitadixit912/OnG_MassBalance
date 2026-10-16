@@ -12,7 +12,7 @@
             "path": ".",
             "parameters": {
                 "memory"    : "256M",
-                "disk-quota": "512M",
+                "disk-quota": "768M",
                 "buildpacks": ["nodejs_buildpack"],
                 "routes"    : [
                     { "route": "mass-balance-cap-app-srv.cfapps.us10.hana.ondemand.com" }
@@ -28,10 +28,11 @@
             "build-parameters": {
                 "builder"     : "npm",
                 "build-result": ".",
-                "ignore"      : ["node_modules/", ".env"]
+                "ignore"      : ["node_modules/", ".env", "*.mtar", "mta_archives/", ".mass-balance-cap-app_mta_build_tmp/"]
             },
             "requires": [
-                { "name": "proj-vector-destination-service" }
+                { "name": "proj-vector-destination-service" },
+                { "name": "proj-vector-connectivity-service" }
             ]
         }
 
@@ -40,6 +41,10 @@
     "resources": [
         {
             "name": "proj-vector-destination-service",
+            "type": "org.cloudfoundry.existing-service"
+        },
+        {
+            "name": "proj-vector-connectivity-service",
             "type": "org.cloudfoundry.existing-service"
         }
     ]

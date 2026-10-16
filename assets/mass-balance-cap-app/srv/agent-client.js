@@ -27,24 +27,26 @@ function _getHistory(contextId) {
 }
 
 // ── AI Core Claude call ────────────────────────────────────────────────────
+// Claude (Anthropic) deployments on AI Core use /invoke with the Anthropic
+// Messages API body — NOT the OpenAI /chat/completions subpath.
 
 async function _callClaude(systemPrompt, messages) {
     const { url, headers } = await resolveDestination('aicore');
-    const endpoint = `${url}/v2/inference/deployments/${DEPLOYMENT_ID}/chat/completions`;
+    const endpoint = `${url}/v2/inference/deployments/${DEPLOYMENT_ID}/invoke`;
 
     const body = JSON.stringify({
-        model      : MODEL,
-        temperature: 0,
-        max_tokens : 4096,
-        system     : systemPrompt,
+        anthropic_version: 'bedrock-2023-05-31',
+        max_tokens       : 4096,
+        temperature      : 0,
+        system           : systemPrompt,
         messages
     });
 
     const res = await fetch(endpoint, {
         method : 'POST',
         headers: {
-            'Content-Type'       : 'application/json',
-            'AI-Resource-Group'  : RESOURCE_GROUP,
+            'Content-Type'      : 'application/json',
+            'AI-Resource-Group' : RESOURCE_GROUP,
             ...headers
         },
         body
@@ -56,8 +58,10 @@ async function _callClaude(systemPrompt, messages) {
     }
 
     const data = await res.json();
-    return data?.choices?.[0]?.message?.content
-        ?? data?.content?.[0]?.text
+    // Anthropic Messages API: content[0].text
+    // Fallback for any wrapper formats
+    return data?.content?.[0]?.text
+        ?? data?.choices?.[0]?.message?.content
         ?? JSON.stringify(data);
 }
 
