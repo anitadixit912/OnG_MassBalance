@@ -26,19 +26,19 @@ Check off items as completed.
 
 ### Sub-agents
 
-- [ ] Execute [specification/data-collection-agent/specification.md](./data-collection-agent/specification.md)
-- [ ] Execute [specification/validation-anomaly-agent/specification.md](./validation-anomaly-agent/specification.md)
-- [ ] Execute [specification/calculation-reconciliation-agent/specification.md](./calculation-reconciliation-agent/specification.md)
-- [ ] Execute [specification/exception-management-agent/specification.md](./exception-management-agent/specification.md)
-- [ ] Execute [specification/report-generation-agent/specification.md](./report-generation-agent/specification.md)
+- [x] Execute [specification/data-collection-agent/specification.md](./data-collection-agent/specification.md)
+- [x] Execute [specification/validation-anomaly-agent/specification.md](./validation-anomaly-agent/specification.md)
+- [x] Execute [specification/calculation-reconciliation-agent/specification.md](./calculation-reconciliation-agent/specification.md)
+- [x] Execute [specification/exception-management-agent/specification.md](./exception-management-agent/specification.md)
+- [x] Execute [specification/report-generation-agent/specification.md](./report-generation-agent/specification.md)
 
 ### Orchestrator
 
-- [ ] Execute [specification/mass-balance-orchestrator-agent/specification.md](./mass-balance-orchestrator-agent/specification.md)
+- [x] Execute [specification/mass-balance-orchestrator-agent/specification.md](./mass-balance-orchestrator-agent/specification.md)
 
 ### Cross-agent compatibility check
 
-- [ ] Verify all A2A ORD IDs in orchestrator `asset.yaml` `requires` match the `provides.apis[].ordId` in each sub-agent `asset.yaml`
+- [x] Verify all A2A ORD IDs in orchestrator `asset.yaml` `requires` match the `provides.apis[].ordId` in each sub-agent `asset.yaml`
 - [ ] Verify all sub-agent A2A endpoints respond at `/.well-known/agent.json`
 - [ ] Verify data shapes passed between orchestrator → sub-agents are consistent (plant, period, domain data)
 

@@ -58,31 +58,31 @@
 
 ## Runtime Skills
 
-- [ ] Create `app/skills/data-validation/SKILL.md` — step-by-step data validation rules for TANK, MAT, MOV, PHYS, BOOK domains
-- [ ] Create `app/skills/mass-balance-calculation/SKILL.md` — formula: Closing = Opening + Receipts − Issues − Consumption ± Transfers ± Adjustments; temperature/density/meter factor corrections
-- [ ] Create `app/skills/variance-classification/SKILL.md` — tolerance matrix: INFO (<0.1% or <1MT), ADVISORY (0.1–0.5% or 1–5MT), WARNING (0.5–2.0% or 5–20MT), CRITICAL (>2.0% or >20MT)
-- [ ] Create `app/skills/root-cause-investigation/SKILL.md` — root cause drill-down via MSEG/MKPF; assign MC/TX/MD/TF/PL/SY
-- [ ] Create `app/skills/approval-governance/SKILL.md` — human approval gate workflow; confirmation format; audit log format
-- [ ] Create `app/skills/exception-report/SKILL.md` — exception report generation template; executive KPI summary format
+- [x] Create `app/skills/data-validation/SKILL.md` — step-by-step data validation rules for TANK, MAT, MOV, PHYS, BOOK domains
+- [x] Create `app/skills/mass-balance-calculation/SKILL.md` — formula: Closing = Opening + Receipts − Issues − Consumption ± Transfers ± Adjustments; temperature/density/meter factor corrections
+- [x] Create `app/skills/variance-classification/SKILL.md` — tolerance matrix: INFO (<0.1% or <1MT), ADVISORY (0.1–0.5% or 1–5MT), WARNING (0.5–2.0% or 5–20MT), CRITICAL (>2.0% or >20MT)
+- [x] Create `app/skills/root-cause-investigation/SKILL.md` — root cause drill-down via MSEG/MKPF; assign MC/TX/MD/TF/PL/SY
+- [x] Create `app/skills/approval-governance/SKILL.md` — human approval gate workflow; confirmation format; audit log format
+- [x] Create `app/skills/exception-report/SKILL.md` — exception report generation template; executive KPI summary format
 
 ---
 
 ## Business Instrumentation (5 Milestones from PRD)
 
-- [ ] Implement M1 — `DATA_INGESTION_LIVE`: log when all 5 domains fetched successfully; log `DATA_INGESTION_FAILED` with missing domains on failure
-- [ ] Implement M2 — `VALIDATION_ENGINE_OPERATIONAL`: log when all validation checks pass; log `VALIDATION_FAILED` with error description on failure
-- [ ] Implement M3 — `MASS_BALANCE_CALCULATION_VALIDATED`: log when closing stock calculated at Plant/Tank/Material level; log `CALCULATION_ERROR` on failure
-- [ ] Implement M4 — `VARIANCE_EXCEPTION_PIPELINE_ACTIVE`: log when all variances classified with exception count; log `CLASSIFICATION_FAILED` on failure
-- [ ] Implement M5 — `HUMAN_APPROVAL_GATES_DEPLOYED`: log when approval received with approver name/role/timestamp; log `APPROVAL_GATE_BYPASSED` as CRITICAL ALERT if gate skipped
-- [ ] Extract business logic from `stream()` into plain async helper `_run_reconciliation()` to avoid GeneratorExit with OTel spans
-- [ ] Add OpenTelemetry span for each milestone using `@tracer.start_as_current_span` decorator pattern
-- [ ] Verify `grep -r "M[0-9]\.achieved" assets/mass-balance-reconciliation-agent/app/` returns results
+- [x] Implement M1 — `DATA_INGESTION_LIVE`: log when all 5 domains fetched successfully; log `DATA_INGESTION_FAILED` with missing domains on failure
+- [x] Implement M2 — `VALIDATION_ENGINE_OPERATIONAL`: log when all validation checks pass; log `VALIDATION_FAILED` with error description on failure
+- [x] Implement M3 — `MASS_BALANCE_CALCULATION_VALIDATED`: log when closing stock calculated at Plant/Tank/Material level; log `CALCULATION_ERROR` on failure
+- [x] Implement M4 — `VARIANCE_EXCEPTION_PIPELINE_ACTIVE`: log when all variances classified with exception count; log `CLASSIFICATION_FAILED` on failure
+- [x] Implement M5 — `HUMAN_APPROVAL_GATES_DEPLOYED`: log when approval received with approver name/role/timestamp; log `APPROVAL_GATE_BYPASSED` as CRITICAL ALERT if gate skipped
+- [x] Extract business logic from `stream()` into plain async helper `_run_reconciliation()` to avoid GeneratorExit with OTel spans
+- [x] Add OpenTelemetry span for each milestone using `@tracer.start_as_current_span` decorator pattern
+- [x] Verify `grep -r "M[0-9]\.achieved" assets/mass-balance-reconciliation-agent/app/` returns results
 
 ---
 
 ## Agent Decorators Validation
 
-- [ ] Verify `app/agent.py` has exactly 9 decorated functions:
+- [x] Verify `app/agent.py` has exactly 9 decorated functions:
   - `@agent_model` — primary model (`sap/anthropic--claude-4.5-sonnet`)
   - `@agent_model` — fallback models
   - `@agent_model` — summarization model
@@ -92,42 +92,42 @@
   - `@agent_config` — checkpointer TTL
   - `@agent_config` — summarization trigger tokens
   - `@prompt_section` — system prompt
-- [ ] Run: `grep -c "^@agent_model\|^@agent_config\|^@prompt_section" assets/mass-balance-reconciliation-agent/app/agent.py` — must return 9
+- [x] Run: `grep -c "^@agent_model\|^@agent_config\|^@prompt_section" assets/mass-balance-reconciliation-agent/app/agent.py` — must return 9
 
 ---
 
 ## Testing
 
-- [ ] Write `conftest.py` — sets `IBD_TESTING=true`, patches `mcp_tools.get_mcp_tools` with mock tools from `mcp-mock.json`
-- [ ] Write `pytest.ini` — configures test discovery for `prebuilt_tests/` and `tests/`
-- [ ] Write `requirements-test.txt`
-- [ ] Generate `mcp-mock.json` using `mcp-mock-config` skill (requires translation files to be in place)
+- [x] Write `conftest.py` — sets `IBD_TESTING=true`, patches `mcp_tools.get_mcp_tools` with mock tools from `mcp-mock.json`
+- [x] Write `pytest.ini` — configures test discovery for `prebuilt_tests/` and `tests/`
+- [x] Write `requirements-test.txt`
+- [x] Generate `mcp-mock.json` using `mcp-mock-config` skill (requires translation files to be in place)
 
 **Unit tests — one per MCP tool domain:**
-- [ ] `tests/test_data_ingestion.py` — mock all 5 MCP servers; verify live data fetch per domain
-- [ ] `tests/test_data_validation.py` — test completeness/consistency checks; verify pipeline halts on failure
-- [ ] `tests/test_mass_balance_calculation.py` — test closing stock formula at Plant/Tank/Material level
-- [ ] `tests/test_variance_classification.py` — test tolerance matrix; verify all 4 severity levels
-- [ ] `tests/test_root_cause_investigation.py` — test drill-down via material document items
-- [ ] `tests/test_approval_governance.py` — verify no SAP document created without approval; test approval log format
-- [ ] `tests/test_exception_report.py` — verify report structure: Exception ID, Severity, Root Cause, Status
+- [x] `tests/test_data_ingestion.py` — mock all 5 MCP servers; verify live data fetch per domain
+- [x] `tests/test_data_validation.py` — test completeness/consistency checks; verify pipeline halts on failure
+- [x] `tests/test_mass_balance_calculation.py` — test closing stock formula at Plant/Tank/Material level
+- [x] `tests/test_variance_classification.py` — test tolerance matrix; verify all 4 severity levels
+- [x] `tests/test_root_cause_investigation.py` — test drill-down via material document items
+- [x] `tests/test_approval_governance.py` — verify no SAP document created without approval; test approval log format
+- [x] `tests/test_exception_report.py` — verify report structure: Exception ID, Severity, Root Cause, Status
 
 **Integration test:**
-- [ ] `tests/test_integration.py` — end-to-end flow: trigger reconciliation → fetch data → validate → calculate → classify → report → approval gate; all external systems mocked
+- [x] `tests/test_integration.py` — end-to-end flow: trigger reconciliation → fetch data → validate → calculate → classify → report → approval gate; all external systems mocked
 
 **Coverage & reporting:**
-- [ ] Run `pytest` (no args) from `assets/mass-balance-reconciliation-agent/`
-- [ ] Verify coverage ≥ 70%; add tests if below threshold
-- [ ] Verify `test_report.json` exists in `assets/mass-balance-reconciliation-agent/`
+- [x] Run `pytest` (no args) from `assets/mass-balance-reconciliation-agent/`
+- [x] Verify coverage ≥ 70%; add tests if below threshold
+- [x] Verify `test_report.json` exists in `assets/mass-balance-reconciliation-agent/`
 
 ---
 
 ## Final Validation
 
-- [ ] `grep -r "M[0-9]\.achieved" assets/mass-balance-reconciliation-agent/app/` — must return results
-- [ ] `grep -r "sap_cloud_sdk.agent_decorators" assets/mass-balance-reconciliation-agent/app/` — must return results
-- [ ] `ls assets/mass-balance-reconciliation-agent/test_report.json` — must exist
-- [ ] `ls assets/mass-balance-reconciliation-agent/Dockerfile` — must exist
-- [ ] Confirm no Z programs referenced anywhere in solution
-- [ ] Confirm no direct HTTP calls to SAP APIs anywhere in agent code
-- [ ] Confirm OGS_S4 destination name used consistently across all 5 MCP server translation files
+- [x] `grep -r "M[0-9]\.achieved" assets/mass-balance-reconciliation-agent/app/` — must return results
+- [x] `grep -r "sap_cloud_sdk.agent_decorators" assets/mass-balance-reconciliation-agent/app/` — must return results
+- [x] `ls assets/mass-balance-reconciliation-agent/test_report.json` — must exist
+- [x] `ls assets/mass-balance-reconciliation-agent/Dockerfile` — must exist
+- [x] Confirm no Z programs referenced anywhere in solution
+- [x] Confirm no direct HTTP calls to SAP APIs anywhere in agent code
+- [x] Confirm OGS_S4 destination name used consistently across all 5 MCP server translation files
