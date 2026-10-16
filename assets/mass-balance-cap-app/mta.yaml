@@ -11,7 +11,7 @@
             "type": "nodejs",
             "path": ".",
             "parameters": {
-                "memory"    : "128M",
+                "memory"    : "256M",
                 "disk-quota": "512M",
                 "buildpacks": ["nodejs_buildpack"],
                 "routes"    : [
@@ -20,7 +20,9 @@
             },
             "properties": {
                 "NODE_ENV"              : "production",
-                "MASS_BALANCE_AGENT_URL": "https://mass-balance-orchestrator-agent.cfapps.us10.hana.ondemand.com"
+                "AICORE_DEPLOYMENT_ID"  : "d20b9095bde7c0ef",
+                "AICORE_RESOURCE_GROUP" : "default",
+                "AICORE_MODEL"          : "anthropic--claude-4.5-sonnet"
             },
             "build-parameters": {
                 "builder"     : "npm",
@@ -61,36 +63,6 @@
                 }
             ]
         },
-
-        {
-            "name": "mass-balance-orchestrator-agent",
-            "type": "application",
-            "path": "../mass-balance-orchestrator-agent",
-            "parameters": {
-                "memory"                     : "512M",
-                "disk-quota"                : "768M",
-                "buildpacks"                : ["python_buildpack"],
-                "health-check-type"         : "http",
-                "health-check-http-endpoint": "/health",
-                "routes"                    : [
-                    { "route": "mass-balance-orchestrator-agent.cfapps.us10.hana.ondemand.com" }
-                ]
-            },
-            "properties": {
-                "PYTHONPATH"              : ".",
-                "AICORE_DEPLOYMENT_ID"    : "d20b9095bde7c0ef",
-                "AICORE_DESTINATION_NAME" : "aicore",
-                "AICORE_RESOURCE_GROUP"   : "default",
-                "LOG_LEVEL"               : "INFO",
-                "AGENT_PUBLIC_URL"        : "https://mass-balance-orchestrator-agent.cfapps.us10.hana.ondemand.com"
-            },
-            "build-parameters": { "builder": "custom", "commands": [], "build-result": "." },
-            "requires": [
-                { "name": "proj-vector-destination-service" },
-                { "name": "proj-vector-connectivity-service" }
-            ]
-        },
-
 
     ],
 

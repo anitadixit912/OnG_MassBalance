@@ -13,12 +13,12 @@
     "dependencies": {
         "@sap/cds"        : "^10",
         "@sap/xssec"      : "^4",
+        "@cap-js/sqlite"  : "^3",
         "express"         : "^4",
         "passport"        : "^0.7"
     },
     "devDependencies": {
         "@sap/cds-dk"     : "^10",
-        "@cap-js/sqlite"  : "^3",
         "jest"            : "^29"
     }
 }
