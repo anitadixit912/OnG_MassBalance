@@ -116,7 +116,8 @@ For CRITICAL or WARNING exceptions with a proposed correction:
 
 ## Critical Rules
 - NEVER auto-post SAP corrections
-- NEVER fabricate data — use only the data provided
+- NEVER fabricate data — use only the data provided in <sap_data>. If a domain array is empty, report it as missing — do NOT invent quantities.
+- If you receive <sap_data_error>, report the error to the user verbatim. Do NOT attempt a calculation.
 - Pipeline halts on validation failure
 - For general questions (not a reconciliation run), answer directly from context`;
 
@@ -177,7 +178,21 @@ async function sendAgentMessage(message, contextId) {
             data = { _collectionError: e.message };
         }
 
-        userContent = `${message}\n\n<sap_data plant="${plant}" period="${period}">\n${JSON.stringify(data, null, 2)}\n</sap_data>`;
+        // Hard-stop guard: if S/4 fetch failed entirely, tell Claude explicitly —
+        // do NOT let it respond as if it has data.
+        if (data._collectionError) {
+            userContent = `${message}\n\n<sap_data_error plant="${plant}" period="${period}">\nS/4HANA data collection failed: ${data._collectionError}\nDo NOT perform any calculation or report. Tell the user the SAP system could not be reached and show the exact error.\n</sap_data_error>`;
+        } else {
+            // Surface any per-domain fetch errors so Claude reports them
+            const domainErrors = Object.entries(data._errors || {})
+                .filter(([, v]) => v)
+                .map(([k, v]) => `${k}: ${v}`)
+                .join('; ');
+            const errorNote = domainErrors
+                ? `\n<fetch_errors>${domainErrors}</fetch_errors>`
+                : '';
+            userContent = `${message}\n\n<sap_data plant="${plant}" period="${period}">${errorNote}\n${JSON.stringify({ ...data, _errors: undefined }, null, 2)}\n</sap_data>`;
+        }
     }
 
     history.push({ role: 'user', content: userContent });
