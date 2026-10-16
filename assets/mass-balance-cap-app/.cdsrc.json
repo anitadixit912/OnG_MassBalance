@@ -1,7 +1,7 @@
 {
     "requires": {
         "db": {
-            "[production]": { "kind": "sqlite", "credentials": { "url": "mass-balance.db" } },
+            "[production]": { "kind": "sqlite", "credentials": { "url": ":memory:" } },
             "[development]": { "kind": "sqlite", "credentials": { "url": ":memory:" } },
             "[docker]": { "kind": "sqlite", "credentials": { "url": "mass-balance.db" } }
         },

@@ -791,7 +791,7 @@ Click a suggestion above or type your question below.</div>
 
 function useSample(btn) {
   const input = document.getElementById('chat-input');
-  if (input) { input.value = btn.textContent; input.focus(); }
+  if (input) { input.value = btn.textContent; sendChat(); }
 }
 
 async function sendChat() {

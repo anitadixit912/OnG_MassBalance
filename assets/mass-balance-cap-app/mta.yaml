@@ -20,7 +20,7 @@
             },
             "properties": {
                 "NODE_ENV"              : "production",
-                "CDS_CONFIG"            : "{\"requires\":{\"auth\":{\"kind\":\"dummy\"}}}",
+                "CDS_CONFIG"            : "{\"requires\":{\"auth\":{\"kind\":\"dummy\",\"users\":{\"*\":{\"roles\":[\"MassBalance.Engineer\",\"MassBalance.Manager\",\"MassBalance.Compliance\"]}}}}}",
                 "AICORE_DEPLOYMENT_ID"  : "d20b9095bde7c0ef",
                 "AICORE_RESOURCE_GROUP" : "default",
                 "AICORE_MODEL"          : "anthropic--claude-4.5-sonnet"
