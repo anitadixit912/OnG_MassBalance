@@ -164,47 +164,139 @@
   .form-row input:focus, .form-row select:focus, .form-row textarea:focus { outline: none; border-color: var(--sap-blue); }
   .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
 
-  /* ── AI CHAT ──────────────────────────────────────────────────────── */
-  .chat-wrap { display: flex; flex-direction: column; height: calc(100vh - var(--hdr-h) - 120px); }
-  .chat-messages {
-    flex: 1; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px;
-    padding: 16px; background: #f9fafb; display: flex; flex-direction: column; gap: 12px;
-  }
-  .chat-msg { max-width: 80%; padding: 10px 14px; border-radius: 10px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
-  .chat-msg.user { align-self: flex-end; background: var(--sap-blue); color: #fff; border-bottom-right-radius: 2px; }
-  .chat-msg.agent { align-self: flex-start; background: #fff; border: 1px solid var(--border); color: var(--text); border-bottom-left-radius: 2px; }
-  .chat-msg.thinking { align-self: flex-start; color: var(--text-light); font-style: italic; font-size: 13px; }
-  /* Markdown rendering inside agent messages */
-  .chat-msg.agent h1,.chat-msg.agent h2,.chat-msg.agent h3 { margin: 8px 0 4px; font-weight: 700; }
-  .chat-msg.agent h1 { font-size: 1.1em; border-bottom: 1px solid #eee; padding-bottom: 3px; }
-  .chat-msg.agent h2 { font-size: 1.0em; }
-  .chat-msg.agent h3 { font-size: 0.95em; }
-  .chat-msg.agent p  { margin: 5px 0; }
-  .chat-msg.agent ul,.chat-msg.agent ol { margin: 5px 0 5px 18px; }
-  .chat-msg.agent li { margin: 2px 0; }
-  .chat-msg.agent strong { font-weight: 700; }
-  .chat-msg.agent em { font-style: italic; }
-  .chat-msg.agent code { background: #f4f4f4; border: 1px solid #ddd; border-radius: 3px; padding: 1px 5px; font-family: monospace; font-size: 0.88em; }
-  .chat-msg.agent table { border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 0.88em; }
-  .chat-msg.agent th { background: #1d2d3e; color: #fff; padding: 6px 10px; text-align: left; }
-  .chat-msg.agent td { border: 1px solid #d0d5da; padding: 5px 10px; }
-  .chat-msg.agent tr:nth-child(even) td { background: #f9fafb; }
-  .chat-msg.agent blockquote { border-left: 3px solid var(--sap-blue); margin: 6px 0; padding: 3px 10px; color: #555; background: #f5f8ff; }
-  .chat-input-row { display: flex; gap: 10px; margin-top: 12px; }
-  .chat-input-row input {
-    flex: 1; border: 1px solid var(--border); border-radius: 6px;
-    padding: 10px 14px; font-size: 14px;
-  }
-  .chat-input-row input:focus { outline: none; border-color: var(--sap-blue); }
+  /* ── JOULE-STYLE AI CHAT ─────────────────────────────────────────── */
+  --joule-purple: #7b4fc5;
+  --joule-blue:   #4a5af0;
+  --joule-grad:   linear-gradient(135deg, #4a5af0 0%, #7b4fc5 100%);
 
-  /* ── SAMPLE PROMPTS ───────────────────────────────────────────────── */
-  .sample-prompts { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
-  .sample-btn {
-    background: #f0f4ff; border: 1px solid #c0d4f5; border-radius: 16px;
-    padding: 5px 14px; font-size: 12px; color: var(--sap-teal);
-    cursor: pointer; transition: .15s;
+  .joule-panel {
+    display: flex; flex-direction: column;
+    height: calc(100vh - var(--hdr-h) - 100px);
+    background: #fff; border-radius: 12px;
+    box-shadow: 0 4px 24px rgba(74,90,240,.13);
+    border: 1px solid #e0e4f8; overflow: hidden;
   }
-  .sample-btn:hover { background: #daeaff; border-color: var(--sap-blue); }
+
+  /* Joule header bar */
+  .joule-header {
+    background: var(--joule-grad);
+    padding: 14px 18px; display: flex; align-items: center; gap: 12px;
+    flex-shrink: 0;
+  }
+  .joule-diamond {
+    width: 34px; height: 34px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .joule-diamond svg { width: 34px; height: 34px; }
+  .joule-header-text { flex: 1; }
+  .joule-header-title { font-size: 16px; font-weight: 700; color: #fff; letter-spacing: .3px; }
+  .joule-header-sub   { font-size: 11px; color: rgba(255,255,255,.75); margin-top: 1px; }
+  .joule-clear-btn {
+    background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.35);
+    border-radius: 6px; color: #fff; font-size: 12px; padding: 4px 10px;
+    cursor: pointer; transition: background .15s;
+  }
+  .joule-clear-btn:hover { background: rgba(255,255,255,.30); }
+
+  /* Suggestion chips */
+  .joule-chips {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    padding: 12px 16px 4px; background: #f8f9ff;
+    border-bottom: 1px solid #e8ecfb; flex-shrink: 0;
+  }
+  .joule-chip {
+    background: #fff; border: 1px solid #c5ccf5; border-radius: 20px;
+    padding: 5px 14px; font-size: 12px; color: #4a5af0;
+    cursor: pointer; transition: all .15s; white-space: nowrap;
+  }
+  .joule-chip:hover { background: #eef0fd; border-color: #7b4fc5; color: #7b4fc5; }
+
+  /* Message area */
+  .joule-messages {
+    flex: 1; overflow-y: auto; padding: 16px 18px;
+    display: flex; flex-direction: column; gap: 14px;
+    background: #f8f9ff;
+  }
+
+  /* Joule agent message — with avatar */
+  .joule-msg-row { display: flex; align-items: flex-start; gap: 10px; max-width: 88%; }
+  .joule-msg-row.user-row { align-self: flex-end; flex-direction: row-reverse; }
+  .joule-avatar {
+    width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+    background: var(--joule-grad);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .joule-avatar svg { width: 16px; height: 16px; }
+
+  .joule-bubble {
+    padding: 10px 14px; border-radius: 12px; font-size: 13.5px;
+    line-height: 1.65; word-break: break-word;
+  }
+  .joule-msg-row.agent-row .joule-bubble {
+    background: #fff; border: 1px solid #dde2f8; color: #1d2d3e;
+    border-top-left-radius: 2px;
+    box-shadow: 0 1px 4px rgba(74,90,240,.07);
+  }
+  .joule-msg-row.user-row .joule-bubble {
+    background: var(--joule-grad); color: #fff;
+    border-top-right-radius: 2px;
+  }
+  .joule-msg-row.thinking-row .joule-bubble {
+    background: #fff; border: 1px solid #dde2f8; color: #7b4fc5;
+    font-style: italic; font-size: 13px;
+  }
+  /* Thinking animation dots */
+  .joule-dots span {
+    display: inline-block; width: 6px; height: 6px; margin: 0 2px;
+    border-radius: 50%; background: #7b4fc5; animation: jbounce 1.2s infinite;
+  }
+  .joule-dots span:nth-child(2) { animation-delay: .2s; }
+  .joule-dots span:nth-child(3) { animation-delay: .4s; }
+  @keyframes jbounce { 0%,80%,100%{transform:translateY(0)} 40%{transform:translateY(-6px)} }
+
+  /* Markdown inside agent bubble */
+  .joule-bubble h1,.joule-bubble h2,.joule-bubble h3 { margin: 8px 0 4px; font-weight: 700; }
+  .joule-bubble h1 { font-size: 1.05em; border-bottom: 1px solid #e8ecfb; padding-bottom: 3px; }
+  .joule-bubble h2 { font-size: 1.0em; }
+  .joule-bubble h3 { font-size: .95em; color: #4a5af0; }
+  .joule-bubble p  { margin: 5px 0; }
+  .joule-bubble ul,.joule-bubble ol { margin: 5px 0 5px 18px; }
+  .joule-bubble li { margin: 2px 0; }
+  .joule-bubble strong { font-weight: 700; }
+  .joule-bubble em { font-style: italic; }
+  .joule-bubble code { background: #f0f2ff; border: 1px solid #dde2f8; border-radius: 3px; padding: 1px 5px; font-family: monospace; font-size: .87em; color: #4a5af0; }
+  .joule-bubble table { border-collapse: collapse; width: 100%; margin: 8px 0; font-size: .87em; }
+  .joule-bubble th { background: var(--joule-grad); color: #fff; padding: 6px 10px; text-align: left; }
+  .joule-bubble td { border: 1px solid #dde2f8; padding: 5px 10px; }
+  .joule-bubble tr:nth-child(even) td { background: #f4f6ff; }
+  .joule-bubble blockquote { border-left: 3px solid #7b4fc5; margin: 6px 0; padding: 3px 10px; color: #555; background: #f4f2ff; border-radius: 0 6px 6px 0; }
+
+  /* Input row */
+  .joule-input-row {
+    display: flex; gap: 8px; padding: 12px 16px;
+    background: #fff; border-top: 1px solid #e0e4f8; flex-shrink: 0;
+  }
+  .joule-input {
+    flex: 1; border: 1.5px solid #c5ccf5; border-radius: 24px;
+    padding: 9px 18px; font-size: 13.5px; color: var(--text);
+    outline: none; transition: border-color .15s;
+  }
+  .joule-input:focus { border-color: #4a5af0; }
+  .joule-send-btn {
+    width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
+    background: var(--joule-grad); border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: opacity .15s; box-shadow: 0 2px 8px rgba(74,90,240,.3);
+  }
+  .joule-send-btn:hover { opacity: .88; }
+  .joule-send-btn svg { width: 16px; height: 16px; }
+
+  /* Powered-by footer */
+  .joule-footer {
+    text-align: center; font-size: 10.5px; color: #aaa;
+    padding: 5px 0 8px; background: #fff; flex-shrink: 0;
+  }
+  .joule-footer span { color: #7b4fc5; font-weight: 600; }
 
   /* ── CLICKABLE TILES ──────────────────────────────────────────────── */
   .kpi-card { cursor: pointer; transition: box-shadow .15s, transform .1s; }
@@ -269,7 +361,7 @@
   <a class="nav-link" data-screen="audit" href="#audit"><span class="ico">📋</span> Audit Trail</a>
 
   <div class="nav-section">AI Agent</div>
-  <a class="nav-link" data-screen="chat" href="#chat"><span class="ico">🤖</span> AI Assistant</a>
+  <a class="nav-link" data-screen="chat" href="#chat"><span class="ico">◇</span> Joule</a>
 </nav>
 
 <!-- MAIN -->
@@ -738,6 +830,36 @@ let chatHistory = [];
 let chatContextId = 'ctx-' + Date.now();
 
 async function renderChat() {
+  // If already on chat screen, only re-render messages — don't wipe the whole panel
+  if (document.getElementById('chat-msgs')) {
+    const box = document.getElementById('chat-msgs');
+    const avatarSvg = `<svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 1L15 6L8 15L1 6Z" fill="white"/><path d="M8 1L15 6L8 8.5Z" fill="rgba(255,255,255,0.5)"/><path d="M8 1L1 6L8 8.5Z" fill="rgba(255,255,255,0.7)"/></svg>`;
+    box.innerHTML = '';
+    chatHistory.forEach(m => {
+      const row = document.createElement('div');
+      if (m.role === 'agent') {
+        row.className = 'joule-msg-row agent-row';
+        const bubble = document.createElement('div');
+        bubble.className = 'joule-bubble';
+        if (typeof marked !== 'undefined' && typeof DOMPurify !== 'undefined') {
+          bubble.innerHTML = DOMPurify.sanitize(marked.parse(m.text));
+        } else {
+          bubble.textContent = m.text;
+        }
+        row.innerHTML = `<div class="joule-avatar">${avatarSvg}</div>`;
+        row.appendChild(bubble);
+      } else {
+        row.className = 'joule-msg-row user-row';
+        const bubble = document.createElement('div');
+        bubble.className = 'joule-bubble';
+        bubble.textContent = m.text;
+        row.appendChild(bubble);
+      }
+      box.appendChild(row);
+    });
+    box.scrollTop = box.scrollHeight;
+    return;
+  }
   const samples = [
     'Run mass balance for plant 1000 period 2026-09',
     'Explain the CRITICAL exception for CRUDE01',
@@ -747,43 +869,93 @@ async function renderChat() {
     'Summarise the latest reconciliation run',
   ];
 
+  // Joule diamond SVG (geometric diamond shape matching SAP Joule logo)
+  const diamondSvg = `<svg viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M17 3L31 13.5L17 31L3 13.5Z" fill="rgba(255,255,255,0.9)"/>
+    <path d="M17 3L31 13.5L17 18Z" fill="rgba(255,255,255,0.5)"/>
+    <path d="M17 3L3 13.5L17 18Z" fill="rgba(255,255,255,0.7)"/>
+    <path d="M3 13.5L17 18L17 31Z" fill="rgba(255,255,255,0.4)"/>
+    <path d="M31 13.5L17 18L17 31Z" fill="rgba(255,255,255,0.3)"/>
+  </svg>`;
+
+  const avatarSvg = `<svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M8 1L15 6L8 15L1 6Z" fill="white"/>
+    <path d="M8 1L15 6L8 8.5Z" fill="rgba(255,255,255,0.5)"/>
+    <path d="M8 1L1 6L8 8.5Z" fill="rgba(255,255,255,0.7)"/>
+  </svg>`;
+
+  const sendSvg = `<svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M14 8L2 2L5 8L2 14L14 8Z" fill="white"/>
+  </svg>`;
+
   document.getElementById('main').innerHTML = `
-  <div class="screen-title">AI Assistant</div>
-  <div class="screen-sub">Mass Balance Reconciliation Agent — ask anything about your data</div>
-  <div class="sample-prompts">
-    ${samples.map(s => `<button class="sample-btn" onclick="useSample(this)">${s}</button>`).join('')}
-  </div>
-  <div class="chat-wrap">
-    <div class="chat-messages" id="chat-msgs">
-      <div class="chat-msg agent">Hello! I am the <strong>Mass Balance Reconciliation Agent</strong>.
+  <div class="screen-title" style="margin-bottom:12px">Joule <span style="font-size:13px;font-weight:400;color:var(--text-light);margin-left:6px">AI Assistant · Mass Balance</span></div>
+  <div class="joule-panel">
 
-I can help you:
-• Run a reconciliation for a plant and period
-• Explain exceptions, variances and root causes
-• Check S/4HANA domain data (TANK, MAT, MOV, PHYS, BOOK)
-• Review pending approvals and audit events
-• Show tolerance thresholds
+    <div class="joule-header">
+      <div class="joule-diamond">${diamondSvg}</div>
+      <div class="joule-header-text">
+        <div class="joule-header-title">Joule</div>
+        <div class="joule-header-sub">Mass Balance Reconciliation · Powered by SAP AI Core</div>
+      </div>
+      <button class="joule-clear-btn" onclick="clearChat()">New chat</button>
+    </div>
 
-Click a suggestion above or type your question below.</div>
+    <div class="joule-chips">
+      ${samples.map(s => `<button class="joule-chip" onclick="useSample(this)">${s}</button>`).join('')}
     </div>
-    <div class="chat-input-row">
-      <input type="text" id="chat-input" placeholder="e.g. Run mass balance for plant 1000 period 2026-09" onkeydown="if(event.key==='Enter')sendChat()"/>
-      <button class="btn btn-primary" onclick="sendChat()">Send</button>
-      <button class="btn btn-ghost" onclick="clearChat()">Clear</button>
+
+    <div class="joule-messages" id="chat-msgs">
+      <div class="joule-msg-row agent-row">
+        <div class="joule-avatar">${avatarSvg}</div>
+        <div class="joule-bubble">
+          <strong>Hello! I'm Joule.</strong><br><br>
+          I can help you with your refinery mass balance:<br>
+          &bull; Run a reconciliation for a plant and period<br>
+          &bull; Explain exceptions, variances and root causes<br>
+          &bull; Check S/4HANA domain data (TANK, MOV, PHYS, BOOK)<br>
+          &bull; Review pending approvals and audit events<br><br>
+          Select a suggestion above or type your question below.
+        </div>
+      </div>
     </div>
+
+    <div class="joule-input-row">
+      <input class="joule-input" type="text" id="chat-input"
+        placeholder="Ask Joule anything about your mass balance data…"
+        onkeydown="if(event.key==='Enter')sendChat()"/>
+      <button class="joule-send-btn" onclick="sendChat()" title="Send">${sendSvg}</button>
+    </div>
+    <div class="joule-footer">Powered by <span>SAP AI Core</span> &nbsp;·&nbsp; Model: anthropic--claude-4.6-sonnet</div>
+
   </div>`;
 
+  // Re-render existing history (first load of chat screen)
   if (chatHistory.length) {
+    const avatarHtml = `<div class="joule-avatar">${avatarSvg}</div>`;
     const box = document.getElementById('chat-msgs');
+    box.innerHTML = '';
     chatHistory.forEach(m => {
-      const d = document.createElement('div');
-      d.className = 'chat-msg ' + m.role;
-      if (m.role === 'agent' && typeof marked !== 'undefined' && typeof DOMPurify !== 'undefined') {
-        d.innerHTML = DOMPurify.sanitize(marked.parse(m.text));
+      const row = document.createElement('div');
+      if (m.role === 'agent') {
+        row.className = 'joule-msg-row agent-row';
+        const bubble = document.createElement('div');
+        bubble.className = 'joule-bubble';
+        if (typeof marked !== 'undefined' && typeof DOMPurify !== 'undefined') {
+          bubble.innerHTML = DOMPurify.sanitize(marked.parse(m.text));
+        } else {
+          bubble.textContent = m.text;
+        }
+        row.innerHTML = avatarHtml;
+        row.appendChild(bubble);
       } else {
-        d.textContent = m.text;
+        row.className = 'joule-msg-row user-row';
+        const bubble = document.createElement('div');
+        bubble.className = 'joule-bubble';
+        bubble.textContent = m.text;
+        row.appendChild(bubble);
       }
-      box.appendChild(d);
+      box.appendChild(row);
     });
     box.scrollTop = box.scrollHeight;
   }
@@ -803,34 +975,42 @@ async function sendChat() {
 
   const box = document.getElementById('chat-msgs');
 
-  const userDiv = document.createElement('div');
-  userDiv.className = 'chat-msg user';
-  userDiv.textContent = msg;
-  box.appendChild(userDiv);
+  // User bubble
+  const userRow = document.createElement('div');
+  userRow.className = 'joule-msg-row user-row';
+  userRow.innerHTML = `<div class="joule-bubble">${msg.replace(/</g,'&lt;')}</div>`;
+  box.appendChild(userRow);
   chatHistory.push({ role: 'user', text: msg });
 
-  const thinkDiv = document.createElement('div');
-  thinkDiv.className = 'chat-msg thinking';
-  thinkDiv.textContent = 'Agent is thinking…';
-  box.appendChild(thinkDiv);
+  // Thinking indicator with animated dots
+  const thinkRow = document.createElement('div');
+  thinkRow.className = 'joule-msg-row thinking-row';
+  const avatarSvg = `<svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 1L15 6L8 15L1 6Z" fill="white"/><path d="M8 1L15 6L8 8.5Z" fill="rgba(255,255,255,0.5)"/><path d="M8 1L1 6L8 8.5Z" fill="rgba(255,255,255,0.7)"/></svg>`;
+  thinkRow.innerHTML = `<div class="joule-avatar">${avatarSvg}</div><div class="joule-bubble"><div class="joule-dots"><span></span><span></span><span></span></div></div>`;
+  box.appendChild(thinkRow);
   box.scrollTop = box.scrollHeight;
 
   try {
     const result = await odAction(null, null, 'sendAgentMessage', { message: msg, contextId: chatContextId });
-    thinkDiv.remove();
+    thinkRow.remove();
     const replyText = typeof result === 'string' ? result : (result.value || JSON.stringify(result));
-    const agentDiv = document.createElement('div');
-    agentDiv.className = 'chat-msg agent';
+
+    const agentRow = document.createElement('div');
+    agentRow.className = 'joule-msg-row agent-row';
+    const bubble = document.createElement('div');
+    bubble.className = 'joule-bubble';
     if (typeof marked !== 'undefined' && typeof DOMPurify !== 'undefined') {
-      agentDiv.innerHTML = DOMPurify.sanitize(marked.parse(replyText));
+      bubble.innerHTML = DOMPurify.sanitize(marked.parse(replyText));
     } else {
-      agentDiv.textContent = replyText;
+      bubble.textContent = replyText;
     }
-    box.appendChild(agentDiv);
+    agentRow.innerHTML = `<div class="joule-avatar">${avatarSvg}</div>`;
+    agentRow.appendChild(bubble);
+    box.appendChild(agentRow);
     chatHistory.push({ role: 'agent', text: replyText });
   } catch(e) {
-    thinkDiv.className = 'chat-msg agent';
-    thinkDiv.textContent = 'Error reaching agent: ' + e.message;
+    thinkRow.className = 'joule-msg-row agent-row';
+    thinkRow.innerHTML = `<div class="joule-avatar">${avatarSvg}</div><div class="joule-bubble" style="color:#bb0000">Error reaching Joule: ${e.message}</div>`;
     chatHistory.push({ role: 'agent', text: 'Error: ' + e.message });
   }
   box.scrollTop = box.scrollHeight;
